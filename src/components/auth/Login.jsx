@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import logoImage from '../../assets/react.svg'; // You'll need to add a logo image
+import { useDispatch, useSelector } from 'react-redux';
+import logoImage from '../../assets/react.svg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState('');
-  const { login, error, loading } = useAuth();
+  const { login, loading, error } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,7 +116,7 @@ const Login = () => {
           
           <div className="text-sm text-center mt-4">
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Don't have an account?&nbsp;
               <Link to="/register" className="font-medium text-amber-500 hover:text-amber-600">
                 Create an account
               </Link>

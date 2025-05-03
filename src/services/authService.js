@@ -21,9 +21,9 @@ if (token) {
 }
 
 const authService = {
-  login: async (username, password) => {
+  login: async (email, password) => {
     try {
-      const response = await axios.post('/auth/jwt/create/', { username, password });
+      const response = await axios.post('/auth/jwt/create/', { email, password });
       const { access, refresh } = response.data;
       
       // Store tokens
@@ -78,7 +78,52 @@ const authService = {
     } catch (error) {
       throw error;
     }
+  },
+  activateAccount: async (uid, token) => {
+    try {
+      const response = await axios.post('/auth/users/activation/', { uid, token });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  forgotPassword: async (email) => {
+    try {
+      const response = await axios.post('/auth/users/reset_password/', { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  resetPasswordConfirm: async (uid, token, new_password, re_new_password) => {
+    try {
+      const response = await axios.post('/auth/users/reset_password_confirm/', { uid, token, new_password, re_new_password });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  // services/authService.js
+fetchUserProfile: async () => {
+  try {
+    const response = await axios.get('/api/profile/');
+    return response.data;
+  } catch (error) {
+    throw error;
   }
+},
+
+updateUserProfile: async (profileData) => {
+  try {
+    const response = await axios.patch('/api/profile/', profileData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+},
+
 };
 
 export default authService;

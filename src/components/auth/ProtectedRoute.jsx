@@ -1,11 +1,11 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
-import { authLoadingState, isAuthenticatedState } from '../../store/authState';
+import { useSelector } from 'react-redux';
+// import { authLoadingState } from '../../store/authState';
 
 const ProtectedRoute = () => {
-  const isLoading = useRecoilValue(authLoadingState);
-  const isAuthenticated = useRecoilValue(isAuthenticatedState);
+  const isLoading = useSelector((state) => state.auth.loading);
+  const isAuthenticated = useSelector((state) => state.auth.token);
   
   // If still loading, show loading indicator
   if (isLoading) {
@@ -15,7 +15,7 @@ const ProtectedRoute = () => {
       </div>
     );
   }
-  
+
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

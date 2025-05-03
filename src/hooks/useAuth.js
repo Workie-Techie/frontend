@@ -1,30 +1,31 @@
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
-import axios from 'axios';
-import { tokenState, refreshTokenState, userState, authLoadingState, authErrorState, isAuthenticatedState, setAuthHeader } from '../store/authState';
+import { useDispatch, useSelector } from 'react-redux';
+import { setToken, setRefreshToken, setUser, setLoading, setError, clearAuth } from '../store/authState';
+import authService, { setAuthToken } from '../services/authService';
+import { setProfile } from '../store/authState';
+import { useEffect } from 'react';
+
+const API_URL = 'http://localhost:8000';
 
 export const useAuth = () => {
-  const [token, setToken] = useRecoilState(tokenState);
-  const [refreshToken, setRefreshToken] = useRecoilState(refreshTokenState);
-  const [user, setUser] = useRecoilState(userState);
-  const [loading, setLoading] = useRecoilState(authLoadingState);
-  const [error, setError] = useRecoilState(authErrorState);
-  const isAuthenticated = useRecoilValue(isAuthenticatedState);
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth.token);
+  const refreshToken = useSelector((state) => state.auth.refreshToken);
+  const user = useSelector((state) => state.auth.user);
+  const loading = useSelector((state) => state.auth.loading);
+  const error = useSelector((state) => state.auth.error);
+
+  useEffect(() => {
+    if (token) {
+      setAuthToken(token);
+    }
+  }, [token]);
 
   const login = async (email, password) => {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
     try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.post('/auth/jwt/create/', { email, password });
-      const { access, refresh } = response.data;
-      
-      // Store tokens
-      localStorage.setItem('token', access);
-      localStorage.setItem('refreshToken', refresh);
-      
-      // Update state
-      setToken(access);
-      setRefreshToken(refresh);
-      setAuthHeader(access);
+      const access = await authService.login(email, password);
+      dispatch(setToken(access));
       
       // Fetch user details
       await fetchCurrentUser();
@@ -32,70 +33,58 @@ export const useAuth = () => {
       return true;
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.detail || 'Invalid credentials');
-      setLoading(false);
+      dispatch(setError(err.response?.data?.detail || 'Invalid credentials'));
       return false;
+    } finally {
+      dispatch(setLoading(false));
     }
   };
 
   const register = async (userData) => {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
     try {
-      setLoading(true);
-      setError(null);
-      await axios.post('/auth/users/', userData);
-      
-      // // Auto login after registration
-      // const loginSuccess = await login(userData.email, userData.password);
-      // return loginSuccess;
-      setLoading(false);
+      await authService.register(userData);
+      dispatch(setLoading(false));
       return { success: true };
     } catch (err) {
       console.error('Registration error:', err);
       if (err.response && err.response.data) {
         const errorMessages = Object.values(err.response.data).flat().join(' ');
-        setError(errorMessages);
+        dispatch(setError(errorMessages));
       } else {
-        setError('Registration failed');
+        dispatch(setError('Registration failed'));
       }
-      setLoading(false);
+      dispatch(setLoading(false));
       return false;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    setToken(null);
-    setRefreshToken(null);
-    setUser(null);
-    setAuthHeader(null);
+    authService.logout();
+    dispatch(clearAuth());
   };
 
   const fetchCurrentUser = async () => {
     try {
-      setLoading(true);
-      const response = await axios.get('/api/user/');
-      setUser(response.data);
-      setError(null);
-      setLoading(false);
+      dispatch(setLoading(true));
+      const userData = await authService.fetchCurrentUser();
+      dispatch(setUser(userData));
+      dispatch(setError(null));
+      dispatch(setLoading(false));
       return true;
     } catch (err) {
       console.error('Error fetching user:', err);
-      setError('Failed to fetch user data');
-      setLoading(false);
+      dispatch(setError('Failed to fetch user data'));
+      dispatch(setLoading(false));
       return false;
     }
   };
 
   const refreshAccessToken = async () => {
     try {
-      const response = await axios.post('/auth/jwt/refresh/', { refresh: refreshToken });
-      const { access } = response.data;
-      
-      localStorage.setItem('token', access);
-      setToken(access);
-      setAuthHeader(access);
-      
+      const access = await authService.refreshToken();
+      dispatch(setToken(access));
       return true;
     } catch (err) {
       console.error('Token refresh error:', err);
@@ -106,35 +95,82 @@ export const useAuth = () => {
 
   const activateAccount = async (uid, token) => {
     try {
-      setLoading(true);
-      setError(null);
-      await axios.post('/auth/users/activation/', { uid, token });
-      setLoading(false);
+      dispatch(setLoading(true));
+      dispatch(setError(null));
+      await authService.activateAccount(uid, token);
+      dispatch(setLoading(false));
       return { success: true };
     } catch (err) {
       console.error('Activation error:', err);
       if (err.response && err.response.data) {
         const errorMessages = Object.values(err.response.data).flat().join(' ');
-        setError(errorMessages);
+        dispatch(setError(errorMessages));
       } else {
-        setError('Activation failed');
+        dispatch(setError('Activation failed'));
       }
-      setLoading(false);
+      dispatch(setLoading(false));
       return { success: false };
     }
   };
-  
+
+  const forgotPassword = async (email) => {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+    try {
+      await authService.forgotPassword(email);
+      dispatch(setLoading(false));
+      return { success: true };
+    } catch (err) {
+      console.error('Forgot password error:', err);
+      dispatch(setError(err.response?.data || 'Failed to send reset link'));
+      dispatch(setLoading(false));
+      return false;
+    }
+  };
+
+  const resetPasswordConfirm = async (uid, token, new_password, re_new_password) => {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+    try {
+      await authService.resetPasswordConfirm(uid, token, new_password, re_new_password);
+      dispatch(setLoading(false));
+      return { success: true };
+    } catch (err) {
+      console.error('Reset password confirm error:', err);
+      dispatch(setError(err.response?.data || 'Failed to reset password'));
+      dispatch(setLoading(false));
+      return false;
+    }
+  };
+
+
+const fetchUserProfile = async () => {
+  try {
+    const profile = await authService.fetchUserProfile();
+    dispatch(setProfile(profile));
+    return profile;
+  } catch (error) {
+    dispatch(setError('Failed to load profile'));
+    return null;
+  }
+};
+
 
   return {
     user,
     token,
     loading,
     error,
-    isAuthenticated,
     login,
     register,
     logout,
     refreshAccessToken,
     activateAccount,
+    forgotPassword,
+    resetPasswordConfirm,
+    fetchUserProfile,
+    updateUserProfile: authService.updateUserProfile,
   };
 };
+
+export default useAuth;

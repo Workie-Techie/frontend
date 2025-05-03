@@ -1,46 +1,57 @@
-import { atom, selector } from 'recoil';
-import axios from 'axios';
+import { createSlice } from '@reduxjs/toolkit';
 
-// Base atoms for authentication
-export const tokenState = atom({
-  key: 'tokenState',
-  default: localStorage.getItem('token') || null,
-});
+const initialState = {
+  token: localStorage.getItem('token') || null,
+  refreshToken: localStorage.getItem('refreshToken') || null,
+  user: null,
+  profile: null,
+  loading: false,
+  error: null,
+};
 
-export const refreshTokenState = atom({
-  key: 'refreshTokenState',
-  default: localStorage.getItem('refreshToken') || null,
-});
-
-export const userState = atom({
-  key: 'userState',
-  default: null,
-});
-
-export const authLoadingState = atom({
-  key: 'authLoadingState',
-  default: true,
-});
-
-export const authErrorState = atom({
-  key: 'authErrorState',
-  default: null,
-});
-
-// Selectors for authentication
-export const isAuthenticatedState = selector({
-  key: 'isAuthenticatedState',
-  get: ({ get }) => {
-    const token = get(tokenState);
-    return !!token;
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    setToken: (state, action) => {
+      state.token = action.payload;
+      localStorage.setItem('token', action.payload || '');
+    },
+    setRefreshToken: (state, action) => {
+      state.refreshToken = action.payload;
+      localStorage.setItem('refreshToken', action.payload || '');
+    },
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
+    setProfile: (state, action) => { 
+      state.profile = action.payload; 
+    },
+    setLoading: (state, action) => {
+      state.loading = action.payload;
+    },
+    setError: (state, action) => {
+      state.error = action.payload;
+    },
+    clearAuth: (state) => {
+      state.token = null;
+      state.refreshToken = null;
+      state.user = null;
+      state.profile = null;
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    },
   },
 });
 
-// Set axios default headers whenever token changes
-export const setAuthHeader = (token) => {
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `JWT ${token}`;
-  } else {
-    delete axios.defaults.headers.common['Authorization'];
-  }
-};
+export const {
+  setToken,
+  setRefreshToken,
+  setUser,
+  setProfile,
+  setLoading,
+  setError,
+  clearAuth,
+} = authSlice.actions;
+
+export default authSlice.reducer;
