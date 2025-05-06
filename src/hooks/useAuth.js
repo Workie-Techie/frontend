@@ -168,6 +168,7 @@ const fetchUserProfile = async () => {
     activateAccount,
     forgotPassword,
     resetPasswordConfirm,
+    fetchCurrentUser,
     fetchUserProfile,
     updateUserProfile: authService.updateUserProfile,
   };

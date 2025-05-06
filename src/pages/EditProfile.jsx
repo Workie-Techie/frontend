@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Imported useMemo
-import { useAuth } from '../hooks/useAuth'; // Assuming this hook provides fetch/update profile functions
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '../hooks/useAuth'; // Assuming this hook provides fetch/update profile and fetchCurrentUser functions
 import { useSelector, useDispatch } from 'react-redux';
 // Added icons for new/updated fields
 import { FaEdit, FaSave, FaTimes, FaUser, FaMoneyBillWave, FaInfoCircle, FaTags, FaSpinner, FaCheckCircle, FaCertificate, FaBriefcase, FaBuilding, FaImage } from 'react-icons/fa';
@@ -7,41 +7,44 @@ import { setProfile as setProfileInStore } from '../store/authState'; // Import 
 
 // --- Reusable Editable Section Component ---
 // Manages its own local value state when editing and handles icon alignment
-const EditableSection = ({ title, fieldName, initialValue, children, onEdit, isEditing, onSave, onCancel, isSaving, saveSuccess, error }) => {
-  // Local state to hold the value while editing this section
-  const [localValue, setLocalValue] = useState(initialValue);
+const EditableSection = ({ title, fieldName, initialValue, children, onEdit, onSave, onCancel, ...restProps }) => {
+    // isEditing, isSaving, saveSuccess, error are now included in restProps
+    const { isEditing, isSaving, saveSuccess, error } = restProps;
 
-  // Effect to sync local state if the initialValue prop changes (e.g., after parent fetch or save)
-  useEffect(() => {
-    setLocalValue(initialValue);
-  }, [initialValue]);
+    // Local state to hold the value while editing this section
+    const [localValue, setLocalValue] = useState(initialValue);
 
-  // Update local state as user types
-  const handleLocalChange = (e) => {
-    setLocalValue(e.target.value);
-  };
+    // Effect to sync local state if the initialValue prop changes (e.g., after parent fetch or save)
+    useEffect(() => {
+        setLocalValue(initialValue);
+    }, [initialValue]);
 
-  // Call parent's onSave with the field name and the local value
-  const handleLocalSave = () => {
-    onSave(fieldName, localValue);
-  };
+    // Update local state as user types
+    const handleLocalChange = (e) => {
+        setLocalValue(e.target.value);
+    };
 
-  // Call parent's onCancel and reset local state
-  const handleLocalCancel = () => {
-    setLocalValue(initialValue); // Revert local state
-    onCancel(); // Call parent handler to exit editing mode
-  };
+    // Call parent's onSave with the field name and the local value
+    const handleLocalSave = () => {
+        onSave(fieldName, localValue);
+    };
+
+    // Call parent's onCancel and reset local state
+    const handleLocalCancel = () => {
+        setLocalValue(initialValue); // Revert local state
+        onCancel(); // Call parent handler to exit editing mode
+    };
 
     // Helper formatter for lists (skills, languages, etc.)
     // Handles arrays of strings or objects with a 'name' property
     const formatList = useCallback((list) => {
         if (Array.isArray(list)) {
-          // If it's an array of objects (like Skill objects), map to names
-          if (list.length > 0 && typeof list[0] === 'object' && list[0] !== null && 'name' in list[0]) {
-            return list.map(item => item.name).join(', ');
-          }
-          // If it's an array of strings or other primitives, join them
-          return list.join(', ');
+            // If it's an array of objects (like Skill objects), map to names
+            if (list.length > 0 && typeof list[0] === 'object' && list[0] !== null && 'name' in list[0]) {
+                return list.map(item => item.name).join(', ');
+            }
+            // If it's an array of strings or other primitives, join them
+            return list.join(', ');
         }
         // If it's already a string
         if (typeof list === 'string') {
@@ -51,139 +54,141 @@ const EditableSection = ({ title, fieldName, initialValue, children, onEdit, isE
     }, []);
 
 
-  // --- Helper to Render View or Edit Input ---
-  // Renders either the display text or the input field based on `isEditing` prop
-    // Removed useCallback wrapper - isEditing, localValue, etc. are available via closure
-  const renderFieldContent = (type = 'text', icon = null, isTextArea = false, placeholder = '', displayFormatter = null) => {
-    const IconComponent = icon;
-    // Use localValue if editing, initialValue if not
-    const currentValue = isEditing ? localValue : initialValue; // isEditing is correctly in scope here
+    // --- Helper to Render View or Edit Input ---
+    // Renders either the display text or the input field based on `isEditing` prop
+    const renderFieldContent = (type = 'text', icon = null, isTextArea = false, placeholder = '', displayFormatter = null) => {
+        const IconComponent = icon;
+        // Use localValue if editing, initialValue if not
+        const currentValue = isEditing ? localValue : initialValue;
 
-    // Use the list formatter by default for array types unless a specific formatter is provided
-    const effectiveDisplayFormatter = displayFormatter || (Array.isArray(currentValue) ? formatList : null); // formatList is also in scope
-
-
-    // Wrap icon and content for alignment and consistent icon width
-    return (
-        <div className="flex items-start gap-2 w-full"> {/* Use items-start for top alignment */}
-           {/* Give icon container a fixed width for alignment */}
-           {IconComponent && <div className="shrink-0 w-5 text-gray-400 pt-1"><IconComponent size="1em" /></div>} {/* Adjusted padding/margin */}
-           <div className='flex-grow'> {/* Allow content to take available space */}
-             {isEditing ? (
-                // --- EDIT MODE ---
-                isTextArea ? (
-                   <textarea
-                     name={fieldName}
-                     value={currentValue || ''}
-                     onChange={handleLocalChange}
-                     rows={isTextArea ? 5 : 1} // Default rows for textarea
-                     className="w-full border rounded-md px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 border-gray-300 transition"
-                     placeholder={placeholder || `Enter your ${fieldName.replace('_', ' ')}`}
-                     disabled={isSaving}
-                 />
-                ) : (
-                  <input
-                     type={type}
-                     name={fieldName}
-                     value={currentValue || ''}
-                     onChange={handleLocalChange}
-                     className="w-full border rounded-md px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 border-gray-300 transition"
-                     placeholder={placeholder || `Enter ${fieldName.replace('_', ' ')}`}
-                     disabled={isSaving}
-                 />
-                )
-             ) : (
-                // --- VIEW MODE ---
-                // Corrected ternary chain syntax
-                <div className="text-gray-700 min-h-[1.5em]"> {/* Adjusted min-height */}
-                  {effectiveDisplayFormatter
-                        ? <span className="break-words">{effectiveDisplayFormatter(currentValue)}</span>
-                        : (currentValue
-                            ? <span className="break-words">{currentValue}</span>
-                            : <span className="text-gray-400 italic">Not set</span>
-                          )
-                    }
-                </div>
-             )}
-            </div>
-        </div>
-    );
-  };
+        // Use the list formatter by default for array types unless a specific formatter is provided
+        const effectiveDisplayFormatter = displayFormatter || (Array.isArray(currentValue) ? formatList : null);
 
 
-  return (
-    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 transition-all duration-300">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-md sm:text-lg font-semibold text-gray-800">{title}</h3>
-        {/* Edit Button: Only show if not editing this section */}
-        {!isEditing && (
-          <button
-            onClick={() => onEdit(fieldName)} // Pass fieldName back up
-            className="text-amber-600 hover:text-amber-800 p-1.5 rounded-full hover:bg-amber-100 transition duration-150 ease-in-out disabled:opacity-50"
-            aria-label={`Edit ${title}`}
-            disabled={isSaving} // Disable if any section is currently saving
-          >
-            <FaEdit size="1em" />
-          </button>
-        )}
-        {/* Success Indicator: Show briefly after successful save */}
-         {saveSuccess && (
-           <FaCheckCircle className="text-green-500 animate-pulse" size="1.2em"/>
-         )}
-         {/* Error Indicator (Optional, error message also shown below) */}
-         {error && !isEditing && ( // Show a small error icon in view mode if there's a saved error
-           <FaTimes className="text-red-500" size="1.2em"/>
-         )}
-          {/* This error message is shown below the input */}
-            </div>
-            {/* Pass renderFieldContent helper AND relevant props to the children function */}
-            <div className="text-sm sm:text-base">
-              {typeof children === 'function' ? children(renderFieldContent, { isEditing, isSaving, localValue, error, saveSuccess }) : children}
-            </div>
-      {/* Action Buttons: Show only when editing this section */}
-      {isEditing && (
-        <div className="mt-4 flex justify-end items-center gap-3">
-           {error && <p className="text-red-500 text-xs mr-auto">{error}</p>}
-          <button
-            onClick={handleLocalCancel} // Use local cancel handler
-            type="button"
-            className="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
-            disabled={isSaving}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleLocalSave} // Use local save handler
-            type="button"
-            className="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed min-w-[80px]"
-            disabled={isSaving}
-          >
-            {isSaving ? <FaSpinner className="animate-spin" size="1em" /> : <FaSave size="1em" />}
-            <span>Save</span>
-          </button>
-        </div>
-      )}
-    </div>
-  );
+        // Wrap icon and content for alignment and consistent icon width
+        return (
+            <div className="flex items-start gap-2 w-full"> {/* Use items-start for top alignment */}
+                {/* Give icon container a fixed width for alignment */}
+                {IconComponent && <div className="shrink-0 w-5 text-gray-400 pt-1"><IconComponent size="1em" /></div>} {/* Adjusted padding/margin */}
+                <div className='flex-grow'> {/* Allow content to take available space */}
+                    {isEditing ? (
+                        // --- EDIT MODE ---
+                        isTextArea ? (
+                            <textarea
+                                name={fieldName}
+                                value={currentValue || ''}
+                                onChange={handleLocalChange}
+                                rows={isTextArea ? 5 : 1} // Default rows for textarea
+                                className="w-full border rounded-md px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 border-gray-300 transition"
+                                placeholder={placeholder || `Enter your ${fieldName.replace('_', ' ')}`}
+                                disabled={isSaving}
+                            />
+                        ) : (
+                            <input
+                                type={type}
+                                name={fieldName}
+                                value={currentValue || ''}
+                                onChange={handleLocalChange}
+                                className="w-full border rounded-md px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-500 border-gray-300 transition"
+                                placeholder={placeholder || `Enter ${fieldName.replace('_', ' ')}`}
+                                disabled={isSaving}
+                            />
+                        )
+                    ) : (
+                        // --- VIEW MODE ---
+                        <div className="text-gray-700 min-h-[1.5em]"> {/* Adjusted min-height */}
+                            {effectiveDisplayFormatter
+                                ? <span className="break-words">{effectiveDisplayFormatter(currentValue)}</span>
+                                : (currentValue
+                                    ? <span className="break-words">{currentValue}</span>
+                                    : <span className="text-gray-400 italic">Not set</span>
+                                )
+                            }
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+
+    return (
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 transition-all duration-300">
+            <div className="flex justify-between items-center mb-3">
+                <h3 className="text-md sm:text-lg font-semibold text-gray-800">{title}</h3>
+                {/* Edit Button: Only show if not editing this section */}
+                {!isEditing && (
+                    <button
+                        onClick={() => onEdit(fieldName)} // Pass fieldName back up
+                        className="text-amber-600 hover:text-amber-800 p-1.5 rounded-full hover:bg-amber-100 transition duration-150 ease-in-out disabled:opacity-50"
+                        aria-label={`Edit ${title}`}
+                        disabled={isSaving} // Disable if any section is currently saving
+                    >
+                        <FaEdit size="1em" />
+                    </button>
+                )}
+                {/* Success Indicator: Show briefly after successful save */}
+                {saveSuccess && (
+                    <FaCheckCircle className="text-green-500 animate-pulse" size="1.2em" />
+                )}
+                {/* Error Indicator (Optional, error message also shown below) */}
+                {error && !isEditing && ( // Show a small error icon in view mode if there's a saved error
+                    <FaTimes className="text-red-500" size="1.2em" />
+                )}
+                {/* This error message is shown below the input */}
+            </div>
+            {/* Pass renderFieldContent helper AND relevant props to the children function */}
+            <div className="text-sm sm:text-base">
+                 {/* Pass isEditing, isSaving, error, saveSuccess from EditableSection's props */}
+                {typeof children === 'function' ? children(renderFieldContent, { isEditing, isSaving, error, saveSuccess }) : children}
+            </div>
+            {/* Action Buttons: Show only when editing this section */}
+            {isEditing && (
+                <div className="mt-4 flex justify-end items-center gap-3">
+                    {error && <p className="text-red-500 text-xs mr-auto">{error}</p>}
+                    <button
+                        onClick={handleLocalCancel} // Use local cancel handler
+                        type="button"
+                        className="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50"
+                        disabled={isSaving}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleLocalSave} // Use local save handler
+                        type="button"
+                        className="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed min-w-[80px]"
+                        disabled={isSaving}
+                    >
+                        {isSaving ? <FaSpinner className="animate-spin" size="1em" /> : <FaSave size="1em" />}
+                        <span>Save</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 };
 
 
 // --- Main Profile Page Component ---
 const EditProfile = () => {
-  const { fetchUserProfile, updateUserProfile } = useAuth();
-  // Get profile from Redux store if available, otherwise fetch
+  const { fetchUserProfile, updateUserProfile, fetchCurrentUser, user } = useAuth(); // Get fetchCurrentUser and user from useAuth
+  // Get profile and token from Redux store
   const initialProfile = useSelector((state) => state.auth.profile);
-  // Assuming user object has basic info like full_name, email, and role
-  const user = useSelector((state) => state.auth.user);
+  const token = useSelector((state) => state.auth.token); // Get token to check authentication state
+  // user is already selected via useAuth hook
+
   const dispatch = useDispatch();
 
   // profileData now primarily reflects the data from Redux (the saved state)
   const [profileData, setProfileData] = useState(initialProfile); // Initialize with Redux state
   // Which section is currently being edited? (e.g., 'title', 'bio', 'skills')
+  const [userData, setUserData] = useState(user)
+
   const [editingSection, setEditingSection] = useState(null);
   // Loading/Saving state for API calls (Global for the whole form)
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(!initialProfile); // True initially if no profile in store
+  const [isLoading, setIsLoading] = useState(!initialProfile || !user); // Consider both profile and user loading
   // Specific success state for visual feedback per section
   const [successes, setSuccesses] = useState({}); // { fieldName: true }
   // Error state per section
@@ -193,31 +198,52 @@ const EditProfile = () => {
     const [selectedProfileImageFile, setSelectedProfileImageFile] = useState(null);
 
 
-  // Fetch profile data when component mounts if not already in Redux store
+  // Fetch profile data and user data when component mounts if not already in Redux store
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!initialProfile) {
-        setIsLoading(true);
-        setErrors({}); // Clear errors
-        try {
-          // fetchUserProfile likely fetches and dispatches to Redux store
-          const data = await fetchUserProfile();
-          setProfileData(data); // Initialize local state as well
-        } catch (err) {
-          console.error('Failed to load profile:', err);
-          // Set a global error message for loading
-          setErrors({ load: 'Failed to load profile data. Please try refreshing.' });
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        // If profile is already in store, initialize local state
-        setProfileData(initialProfile);
+    const loadData = async () => {
+      setIsLoading(true);
+      setErrors({});
+      try {
+        const profilePromise = initialProfile ? Promise.resolve(initialProfile) : fetchUserProfile();
+        const userPromise = user ? Promise.resolve(user) : fetchCurrentUser(); // Fetch user if not in store
+
+        const [profileDataResult, userDataResult] = await Promise.all([profilePromise, userPromise]);
+
+        if (profileDataResult) {
+          setProfileData(profileDataResult);
+        } else {
+             // fetchUserProfile already dispatches error if fails
+        }
+
+         // fetchCurrentUser already dispatches user and error if fails
+         // No need to explicitly handle userDataResult here as Redux state updates will flow through useAuth selectors
+
+      } catch (err) {
+        // This catch is for Promise.all errors if any promise rejects before dispatching its own error
+        console.error('Failed to load data:', err);
+        setErrors({ load: 'Failed to load profile or user data. Please try refreshing.' });
+      } finally {
         setIsLoading(false);
       }
     };
-    loadProfile();
-  }, [fetchUserProfile, initialProfile]);
+
+    // Only load if profileData is null OR user is null AND user is authenticated (token exists)
+    // The user hook already provides `user`, initialProfile is from selector.
+    // Check if token exists to avoid fetching if not logged in.
+    if ((!initialProfile || !user) && token) {
+         loadData();
+    } else if (!token) {
+        // Handle case where user is not authenticated, maybe redirect to login
+        setIsLoading(false); // Ensure loading is false if not authenticated
+        // Optionally set an error or trigger redirect
+        if (!errors.auth) setErrors({ auth: 'User not authenticated. Please log in.' });
+    } else {
+         // If initialProfile and user are already in store and authenticated, just set local profile data
+         setProfileData(initialProfile);
+         setIsLoading(false);
+    }
+
+  }, [fetchUserProfile, initialProfile, fetchCurrentUser, user, token, errors.auth]);
 
 
   // Sync local profileData state if the profile in Redux store changes (e.g., after a successful save)
@@ -258,7 +284,7 @@ const EditProfile = () => {
 
   // Calculate Profile Completion (Updated based on Django model fields)
   const calculateProfileCompletion = useCallback((profile) => {
-    if (!profile) return 0;
+    if (!profile || !user) return 0; // Need user role for calculation
     // Fields from the Django model to check for completion
     const fieldsToCheck = [
       { key: 'name', weight: 1 },
@@ -280,9 +306,9 @@ const EditProfile = () => {
 
 
     let relevantFields = [...fieldsToCheck]; // Start with common and essential fields
-    if (user?.role === 'freelancer') {
+    if (user.is_freelancer) {
         relevantFields = [...relevantFields, ...freelancerFields];
-    } else if (user?.role === 'client') {
+    } else if (user.is_client) {
          relevantFields = [...relevantFields, ...clientFields];
     }
 
@@ -503,10 +529,14 @@ const EditProfile = () => {
 
   // --- Render Logic ---
   if (isLoading) return <div className="flex justify-center items-center h-60"><FaSpinner className="animate-spin text-amber-500 text-4xl" /></div>;
-  // Show general load error if profileData is null and there's a load error
-  if (!profileData && errors.load) return <div className="text-center p-10 text-red-600 bg-red-50 rounded-md">{errors.load}</div>;
-  if (!profileData) return <div className="text-center p-10 text-gray-500">Profile data not available.</div>;
-
+  // Show general load error if profileData or user is null and there's a load error
+  if ((!profileData || !user) && errors.load) return <div className="text-center p-10 text-red-600 bg-red-50 rounded-md">{errors.load}</div>;
+  // Show authentication error if user is null and there's an auth error
+  if (!user && errors.auth) return <div className="text-center p-10 text-red-600 bg-red-50 rounded-md">{errors.auth}</div>;
+  // Show message if profile data is missing but user is loaded (less likely, but defensive)
+  if (!profileData && user) return <div className="text-center p-10 text-gray-500">Profile data not available for this user.</div>;
+  // If user is null but no specific auth/load error, maybe it's still loading or there's another issue.
+   if (!user) return <div className="text-center p-10 text-gray-500">User data not available.</div>; // Should be caught by isLoading or errors.load/auth
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-gray-50 min-h-screen">
@@ -519,7 +549,7 @@ const EditProfile = () => {
               <img
                  // Use selected file for preview, otherwise use saved image URL
                 src={selectedProfileImageFile ? URL.createObjectURL(selectedProfileImageFile) : (typeof profileData.profile_image === 'string' ? profileData.profile_image : null)}
-                alt={profileData.name || 'Profile'}
+                alt={profileData.name || user.full_name || 'Profile'} // Use user.full_name as fallback
                 className="w-full h-full object-cover rounded-full"
               />
             ) : (
@@ -528,17 +558,24 @@ const EditProfile = () => {
           </div>
           <div>
             {/* Display Name and Title from profileData, fallback to user data */}
-            <h1 className="text-3xl font-bold">{profileData.name || user?.full_name || 'Your Name'}</h1>
-            <p className="text-amber-100 text-sm">{profileData.title || user?.email}</p> {/* Assuming title is a good place for a subtitle/email fallback */}
-            {user?.role && (
+            {/* Use profileData.name if available, otherwise user.full_name */}
+            <h1 className="text-3xl font-bold">{profileData.name || user.full_name || 'Your Name'}</h1>
+            <p className="text-amber-100 text-sm">{profileData.title || user.email}</p> {/* Assuming title or user.email */}
+            {user.is_client && (
               <span className="mt-2 inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full capitalize">
-                {user.role}
+                Client
+              </span>
+            )}
+
+            {user.is_freelancer && (
+              <span className="mt-2 inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded-full capitalize">
+                Freelancer
               </span>
             )}
           </div>
         </div>
         {/* Optional: Display Business Name in header if client */}
-        {user?.role === 'client' && profileData.business_name && (
+        {user.is_client && profileData.business_name && (
           <p className="text-amber-100 text-sm mt-2">Business: {profileData.business_name}</p>
         )}
       </div>
@@ -674,7 +711,7 @@ const EditProfile = () => {
 
 
          {/* Business Name (Client Only) */}
-         {user?.role === 'client' && (
+         {user.is_client && (
             <EditableSection
                 title="Business Name"
                 fieldName="business_name"
@@ -692,7 +729,7 @@ const EditProfile = () => {
          )}
 
 
-         {user?.role === 'freelancer' && (
+         {user.is_freelancer && (
              <> {/* Use Fragment for grouping */}
                 {/* Hourly Rate */}
                 <EditableSection
@@ -725,7 +762,7 @@ const EditProfile = () => {
                 >
                     {/* Pass the render function as children and use it inside */}
                      {/* Accept render helper AND relevant state/props */}
-                    {(render, { isEditing, error }) => ( // isEditing and error might be used here
+                    {(render, { isEditing, error }) => ( // isEditing and error are used here
                         <>
                             {/* renderFieldContent uses formatList internally for display mode */}
                             {render('text', FaTags, false, 'e.g. React, Node.js, Figma (Comma-separated)')}
