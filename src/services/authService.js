@@ -18,6 +18,7 @@ export const setAuthToken = (token) => {
 const token = localStorage.getItem('token');
 if (token) {
   setAuthToken(token);
+  console.log(token)
 }
 
 const authService = {
@@ -40,6 +41,9 @@ const authService = {
   },
   
   register: async (userData) => {
+    if (token) {
+      setAuthToken(null);
+    }
     try {
       const response = await axios.post('/auth/users/', userData);
       return response.data;
