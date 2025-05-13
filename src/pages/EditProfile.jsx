@@ -4,15 +4,15 @@ import { useSelector, useDispatch } from 'react-redux';
 // Added icons for new/updated fields
 import { FaEdit, FaSave, FaTimes, FaUser, FaMoneyBillWave, FaInfoCircle, FaTags, FaSpinner, FaCheckCircle, FaCertificate, FaBriefcase, FaBuilding, FaImage } from 'react-icons/fa';
 import { setProfile as setProfileInStore } from '../store/authState'; // Import your Redux action to update the profile in the store
-
+import SkillSelector from '../components/SkillSelector.jsx';
 // --- Reusable Editable Section Component ---
 // Manages its own local value state when editing and handles icon alignment
-const EditableSection = ({ title, fieldName, initialValue, children, onEdit, onSave, onCancel, ...restProps }) => {
+const EditableSection = ({ title, fieldName, initialValue, children, onEdit, onSave, onCancel, setLocalValue, localValue, ...restProps }) => {
     // isEditing, isSaving, saveSuccess, error are now included in restProps
     const { isEditing, isSaving, saveSuccess, error } = restProps;
 
     // Local state to hold the value while editing this section
-    const [localValue, setLocalValue] = useState(initialValue);
+    
 
     // Effect to sync local state if the initialValue prop changes (e.g., after parent fetch or save)
     useEffect(() => {
@@ -180,6 +180,8 @@ const EditProfile = () => {
 
   const dispatch = useDispatch();
 
+const [localValue, setLocalValue] = useState();
+
   // profileData now primarily reflects the data from Redux (the saved state)
   const [profileData, setProfileData] = useState(initialProfile); // Initialize with Redux state
   // Which section is currently being edited? (e.g., 'title', 'bio', 'skills')
@@ -270,6 +272,11 @@ const EditProfile = () => {
      if (section === 'profile_image') {
         setSelectedProfileImageFile(null);
      }
+     if (section === 'skills') {
+        setLocalValue(profileData.skills || []);
+      } else {
+        setLocalValue(profileData[section]);
+      }
   };
 
   // Cancel editing, revert changes for the current section (local state in EditableSection handles value revert)
@@ -345,61 +352,62 @@ const EditProfile = () => {
   const handleSave = async (fieldName, valueToUpdate) => {
     // Profile image and Portfolio need separate handlers due to FormData/complex structure
     if (fieldName === 'profile_image' || fieldName === 'portfolio') {
-        console.warn(`Attempted to use generic handleSave for ${fieldName}. Use dedicated handler.`);
-        // Potentially call the correct handler here if needed, or rely on the component
-        // structure ensuring the right handler is passed to the Save button.
-        return;
+      console.warn(`Attempted to use generic handleSave for ${fieldName}. Use dedicated handler.`);
+      // Potentially call the correct handler here if needed, or rely on the component
+      // structure ensuring the right handler is passed to the Save button.
+      return;
     }
-
-    setIsSaving(true);
-    setErrors({}); // Clear errors for this specific save attempt
-    setSuccesses({}); // Clear previous successes
-
-    // --- Data Formatting (Align with your Backend API expectations) ---
-    let formattedValue = valueToUpdate;
-
-    // Formatting for Skills (assuming backend expects an array of skill names)
-    if (fieldName === 'skills') {
-        formattedValue = typeof valueToUpdate === 'string'
-            ? valueToUpdate.split(',').map(s => s.trim()).filter(Boolean) // Convert comma-separated string to array of names
-            : Array.isArray(valueToUpdate) ? valueToUpdate.map(item =>
-                 // If it's already an array (e.g., from initial data), ensure we send just names
-                 typeof item === 'object' && item !== null && 'name' in item ? item.name : String(item)
-               ) : [];
-    }
-
-    // Ensure hourly rate is a number
-    if (fieldName === 'hourly_rate') {
-        formattedValue = parseFloat(valueToUpdate) || 0;
-    }
-
-    // For TextField like certifications, CharField like title, bio, business_name, send the string value directly
-    // No specific formatting needed beyond trimming if desired, which isn't done here globally.
-
-    // Prepare data payload with only the field being updated
-    const dataToSend = { [fieldName]: formattedValue };
-
-    try {
-        // Assuming updateUserProfile can handle partial updates and different data types
-      const updatedProfileData = await updateUserProfile(dataToSend);
-
-      // Update profile in Redux store (important!).
-      dispatch(setProfileInStore(updatedProfileData));
-
-      setEditingSection(null); // Exit editing mode for this section
-      setSuccesses({ [fieldName]: true }); // Set success feedback for this section
-      setTimeout(() => setSuccesses({}), 2000); // Clear success feedback after 2s
-
-    } catch (err) {
-      console.error(`Failed to update ${fieldName}:`, err);
-      // Attempt to parse backend error messages if available
-      const errorMessage = err.response?.data?.[fieldName]?.[0] || err.response?.data?.detail || `Failed to save ${fieldName}. Please try again.` ;
-      setErrors({ [fieldName]: errorMessage }); // Set error for this specific field
-    } finally {
-      setIsSaving(false); // End global saving indicator
-    }
-  };
-
+  
+    setIsSaving(true);
+    setErrors({}); // Clear errors for this specific save attempt
+    setSuccesses({}); // Clear previous successes
+  
+    // --- Data Formatting (Align with your Backend API expectations) ---
+    let formattedValue = valueToUpdate;
+  
+    console.log(valueToUpdate);
+    // Special handling for Skills (ManyToMany field)
+    if (fieldName === 'skills') {
+      // Extract skill IDs from the skill objects
+      const skillIds = Array.isArray(valueToUpdate) 
+        ? valueToUpdate.map(skill => skill.id)
+        : [];
+        
+      formattedValue = skillIds;
+    // formattedValue = {
+    //     "skills": skillIds
+    //   };
+    } else if (fieldName === 'hourly_rate') {
+      // Ensure hourly rate is a number
+      formattedValue = parseFloat(valueToUpdate) || 0;
+    }
+  
+    // Prepare data payload with only the field being updated
+    const dataToSend = { [fieldName]: formattedValue };
+    console.log(dataToSend)
+  
+    try {
+      // Assuming updateUserProfile can handle partial updates and different data types
+      const updatedProfileData = await updateUserProfile(dataToSend);
+  
+      // Update profile in Redux store (important!).
+      dispatch(setProfileInStore(updatedProfileData));
+  
+      setEditingSection(null); // Exit editing mode for this section
+      setSuccesses({ [fieldName]: true }); // Set success feedback for this section
+      setTimeout(() => setSuccesses({}), 2000); // Clear success feedback after 2s
+  
+    } catch (err) {
+      console.error(`Failed to update ${fieldName}:`, err);
+      // Attempt to parse backend error messages if available
+      const errorMessage = err.response?.data?.[fieldName]?.[0] || 
+                         err.response?.data?.detail || 
+                         `Failed to save ${fieldName}. Please try again.`;
+      setErrors({ [fieldName]: errorMessage }); // Set error for this specific field
+    } finally {
+      setIsSaving(false); // End global saving indicator
+    }
+  };
 
     // --- Dedicated Handler for Profile Image Save ---
     const handleProfileImageChange = (e) => {
@@ -521,7 +529,13 @@ const EditProfile = () => {
           */
      };
 
-
+     const handleFieldChange = (fieldName, value) => {
+        setProfileData(prevData => ({
+          ...prevData,
+          [fieldName]: value
+        }));
+      };
+      
   // --- Formatters for Display ---
   const formatRate = (rate) => rate !== null && rate !== undefined && rate !== '' ? `$${parseFloat(rate).toFixed(2)} / hr` : null;
   // formatList is now within EditableSection
@@ -611,6 +625,8 @@ const EditProfile = () => {
                 isSaving={isSaving && editingSection === 'name'}
                 saveSuccess={!!successes.name}
                 error={errors.name}
+                localValue = {localValue} 
+                setLocalValue = {setLocalValue}
             >
                 {/* Pass renderFieldContent helper to children render prop */}
                 {(render) => render('text', FaUser, false, 'Your full name')}
@@ -628,6 +644,8 @@ const EditProfile = () => {
             isSaving={isSaving && editingSection === 'title'}
             saveSuccess={!!successes.title}
             error={errors.title}
+            localValue = {localValue} 
+            setLocalValue = {setLocalValue}
           >
             {(render) => render('text', FaUser, false, 'e.g. Senior Frontend Developer')}
          </EditableSection>
@@ -644,6 +662,8 @@ const EditProfile = () => {
             isSaving={isSaving && editingSection === 'bio'}
             saveSuccess={!!successes.bio}
             error={errors.bio}
+            localValue = {localValue} 
+            setLocalValue = {setLocalValue}
           >
             {(render) => render('text', FaInfoCircle, true, 'Tell clients about your expertise, experience, and what makes you stand out...')}
          </EditableSection>
@@ -661,6 +681,8 @@ const EditProfile = () => {
             isSaving={isSaving && editingSection === 'profile_image'}
             saveSuccess={!!successes.profile_image}
             error={errors.profile_image}
+            localValue = {localValue} 
+            setLocalValue = {setLocalValue}
         >
              {/* Custom rendering for file input and preview */}
              {/* Accept render helper AND relevant state/props */}
@@ -696,7 +718,7 @@ const EditProfile = () => {
                                         hover:file:bg-amber-100"
                                      disabled={isSaving} // isSaving from the render prop arguments
                                   />
-                                  {selectedProfileImageFile && <p className="text-xs text-gray-500 mt-1">Selected: {selectedProfileImageFile.name}</p>} // selectedProfileImageFile from EditProfile scope
+                                  {selectedProfileImageFile && <p className="text-xs text-gray-500 mt-1">Selected: {selectedProfileImageFile.name}</p>} 
                             </div>
                         )}
                          {/* Also display error specific to this section if needed in the custom UI */}
@@ -723,6 +745,8 @@ const EditProfile = () => {
                 isSaving={isSaving && editingSection === 'business_name'}
                 saveSuccess={!!successes.business_name}
                 error={errors.business_name}
+                localValue = {localValue} 
+                setLocalValue = {setLocalValue}
             >
                 {(render) => render('text', FaBuilding, false, 'Your business name')}
             </EditableSection>
@@ -743,36 +767,60 @@ const EditProfile = () => {
                     isSaving={isSaving && editingSection === 'hourly_rate'}
                     saveSuccess={!!successes.hourly_rate}
                     error={errors.hourly_rate}
+                    localValue = {localValue} 
+                    setLocalValue = {setLocalValue}
                 >
                     {(render) => render('number', FaMoneyBillWave, false, 'e.g. 50', formatRate)}
                 </EditableSection>
 
                 {/* Skills */}
-                <EditableSection
-                    title="Skills"
-                    fieldName="skills"
-                    initialValue={profileData.skills} // Pass the array (might be objects or strings)
-                    onEdit={handleEdit}
-                    isEditing={editingSection === 'skills'}
-                    onSave={handleSave} // Uses generic handleSave (formats to array of names)
-                    onCancel={handleCancel}
-                    isSaving={isSaving && editingSection === 'skills'}
-                    saveSuccess={!!successes.skills}
-                    error={errors.skills}
-                >
-                    {/* Pass the render function as children and use it inside */}
-                     {/* Accept render helper AND relevant state/props */}
-                    {(render, { isEditing, error }) => ( // isEditing and error are used here
-                        <>
-                            {/* renderFieldContent uses formatList internally for display mode */}
-                            {render('text', FaTags, false, 'e.g. React, Node.js, Figma (Comma-separated)')}
-                            {/* Use isEditing from render prop arguments */}
-                            {isEditing && <p className="text-xs text-gray-500 mt-1">Enter skills separated by commas.</p>}
-                             {/* Use error from render prop arguments if needed here */}
-                            {/* {error && isEditing && <p className="text-red-500 text-xs mt-1">{error}</p>} */}
-                        </>
+                {/* Skills Section */}
+{/* Skills */}
+<EditableSection
+    title="Skills"
+    fieldName="skills"
+    initialValue={profileData.skills || []} // Pass the array of skill objects
+    onEdit={handleEdit}
+    isEditing={editingSection === 'skills'}
+    onSave={handleSave} 
+    onCancel={handleCancel}
+    isSaving={isSaving && editingSection === 'skills'}
+    saveSuccess={!!successes.skills}
+    error={errors.skills}
+    localValue = {localValue} 
+    setLocalValue = {setLocalValue}
+>
+    {(renderFieldContent, { isEditing, error }) => (
+        <>
+            {!isEditing ? (
+                // Display mode - Show selected skills as tags
+                <div className="flex flex-wrap gap-2 mt-1">
+                    {profileData.skills && profileData.skills.length > 0 ? (
+                        profileData.skills.map(skill => (
+                            <span 
+                                key={skill.id} 
+                                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                            >
+                                {skill.name}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="text-gray-400">No skills added yet</span>
                     )}
-                </EditableSection>
+                </div>
+            ) : (
+                // Edit mode - Use SkillSelector component
+                <SkillSelector
+                    selectedSkills={Array.isArray(localValue) ? localValue : []}
+                    onChange={setLocalValue}
+                    maxSkills={5}
+                    error={error}
+                />
+            )}
+        </>
+    )}
+</EditableSection>
+
 
                  {/* Certifications */}
                 <EditableSection
@@ -786,6 +834,8 @@ const EditProfile = () => {
                     isSaving={isSaving && editingSection === 'certifications'}
                     saveSuccess={!!successes.certifications}
                     error={errors.certifications}
+                    localValue = {localValue} 
+                    setLocalValue = {setLocalValue}
                 >
                     {(render) => render('text', FaCertificate, true, 'List any relevant certifications...')}
                 </EditableSection>
@@ -803,6 +853,8 @@ const EditProfile = () => {
                     isSaving={isSaving && editingSection === 'portfolio'}
                     saveSuccess={!!successes.portfolio}
                     error={errors.portfolio}
+                    localValue = {localValue} 
+                    setLocalValue = {setLocalValue}
                 >
                     {/* This section needs custom rendering logic for file uploads and displaying items */}
                     {/* Accept render helper AND relevant state/props */}

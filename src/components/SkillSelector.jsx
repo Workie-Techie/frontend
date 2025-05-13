@@ -17,7 +17,7 @@ const SkillSelector = ({
     const fetchSkills = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get('/api/skills/');
+        const response = await axios.get('/api/profile/skills/');
         setAvailableSkills(response.data);
       } catch (error) {
         console.error('Error fetching skills:', error);
@@ -79,7 +79,7 @@ const SkillSelector = ({
       <div>
         <input
           type="text"
-          className="border rounded w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded w-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
           placeholder="Search for a skill..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -90,10 +90,6 @@ const SkillSelector = ({
           <p className="text-xs text-amber-600 mt-1">
             Maximum of {maxSkills} skills allowed
           </p>
-        )}
-        
-        {error && (
-          <p className="text-xs text-red-500 mt-1">{error}</p>
         )}
       </div>
       
