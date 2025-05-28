@@ -9,9 +9,11 @@ import CheckEmailPage from './pages/CheckEmailPage.jsx';
 import ActivateAccountPage from './pages/ActivateAccountPage.jsx';
 import ForgotPassword from './components/auth/ForgotPassword.jsx';
 import ResetPasswordConfirm from './components/auth/ResetPasswordConfirm.jsx';
+import CreateJob from './components/CreateJob.jsx';
 import FreelancerProfile from './components/FreelancerProfile';
 import EditProfile from './pages/EditProfile.jsx';
 import Freelancers from './pages/Freelancers.jsx';
+import HomePage from './pages/HomePage.jsx';
 import './index.css';
 
 function App() {
@@ -25,19 +27,20 @@ function App() {
         <Route path="/activate/:uid/:token" element={<ActivateAccountPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/password/reset/confirm/:uid/:token" element={<ResetPasswordConfirm />} />
+
+        <Route path="/" element={<HomePage />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />    
           <Route path="/edit-profile" element={<EditProfile />} />
+          <Route path="/freelancers" element={<Freelancers />} />
+          <Route path="/create-job" element={<CreateJob />} />
         </Route>
         
         <Route path="/:profileSlug" element={<FreelancerProfile />} />
 
-        <Route path="/freelancers" element={<Freelancers />} />
-
         {/* Redirect to login if no route matches */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </ReduxProvider>

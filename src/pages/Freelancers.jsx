@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import FreelancerCard from '../components/FreelancerCard';
 import profileService from '../services/profileService'; // Assuming this service exists and works as expected
 
@@ -12,16 +13,34 @@ const Freelancers = () => {
   const [skillFilter, setSkillFilter] = useState('');
 
   // A placeholder for available skills - in a real app, this might come from an API
-  const [availableSkills, setAvailableSkills] = useState([
-    { id: 'react', name: 'React' },
-    { id: 'python', name: 'Python' },
-    { id: 'design', name: 'Design' },
-    { id: 'writing', name: 'Content Writing' },
-    { id: 'vue', name: 'Vue.js' },
-    { id: 'node', name: 'Node.js' },
-    { id: 'marketing', name: 'Digital Marketing' },
-    // Add more skills as needed
-  ]);
+  const [availableSkills, setAvailableSkills] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  // const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get('/api/profile/public/skills/');
+        // console.log(response.data)
+        // Transform the data to match the expected format
+        const formattedSkills = response.data.map(skill => ({
+          id: skill.id,
+          name: skill.name
+        }));
+        
+        setAvailableSkills(formattedSkills);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching skills:', err);
+        setError('Failed to load skills');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSkills();
+  }, []);
 
   useEffect(() => {
     const loadFreelancers = async () => {
@@ -33,14 +52,19 @@ const Freelancers = () => {
           filters.search = searchTerm;
         }
 
+        // if (skillFilter) {
+        //   filters.skills__name__icontains = skillFilter; // Adjusted to a common API filtering convention for related fields
+        // }
+
         if (skillFilter) {
-          filters.skills__name__icontains = skillFilter; // Adjusted to a common API filtering convention for related fields
+          filters.skill = skillFilter; // not skills__name__icontains
         }
 
         // In a real profileService.getFreelancers, you'd pass pagination and filter parameters
         // e.g., profileService.getFreelancers({ page: currentPage, search: searchTerm, skill: skillFilter })
         const response = await profileService.getFreelancers(currentPage, filters);
 
+        // console.log(typeof response.count)
         // Assuming the API response structure is { results: [...], count: totalItems }
         if (response && response.results && typeof response.count === 'number') {
           setFreelancers(response.results);
@@ -48,6 +72,8 @@ const Freelancers = () => {
           setError(null);
         } else {
           // Handle unexpected response structure
+          console.log(typeof response.count)
+          console.log(response);
           console.error('Unexpected API response structure:', response);
           setError('Failed to parse freelancer data.');
           setFreelancers([]);

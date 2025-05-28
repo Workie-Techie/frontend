@@ -1,2 +1,29 @@
 @import "tailwindcss";
 
+@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+
+body {
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+/* Custom scrollbar for a modern touch (optional) */
+::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f0f0f0;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #154B6C; /* workie-blue-light */
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #D4AF37; /* workie-gold */
+  }
+  
+  /* You might define a gradient text utility here if needed often, or use Tailwind's arbitrary values */
+  .text-gradient-gold-blue {
+    /* @apply bg-gradient-to-r from-workie-gold to-workie-blue-light text-transparent bg-clip-text; */
+  }

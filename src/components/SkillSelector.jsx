@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Assuming you use axios for API calls
 import { FaTimes } from 'react-icons/fa';
+import profileService from '../services/profileService';
 
 const SkillSelector = ({ 
   selectedSkills, 
@@ -12,13 +12,13 @@ const SkillSelector = ({
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Fetch available skills from backend
+  // Fetch available skills from backend using profileService
   useEffect(() => {
     const fetchSkills = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get('/api/profile/skills/');
-        setAvailableSkills(response.data);
+        const skills = await profileService.getSkills();
+        setAvailableSkills(skills);
       } catch (error) {
         console.error('Error fetching skills:', error);
       } finally {
@@ -101,14 +101,14 @@ const SkillSelector = ({
           ) : filteredSkills.length > 0 ? (
             <div className="divide-y">
               {filteredSkills.map(skill => (
-                <button
+                <p
                   key={skill.id}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors"
+                  className="w-full text-center cursor-pointer px-3 py-2 hover:bg-gray-100 transition-colors"
                   onClick={() => handleAddSkill(skill)}
                   disabled={selectedSkills.length >= maxSkills}
                 >
                   {skill.name}
-                </button>
+                </p>
               ))}
             </div>
           ) : (

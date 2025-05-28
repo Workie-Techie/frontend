@@ -5,12 +5,17 @@ const API_URL = 'http://localhost:8000';
 // Set base URL for all axios requests
 axios.defaults.baseURL = API_URL;
 
+const authAxios = axios.create({
+  baseURL: API_URL
+});
+
+
 // Function to set auth token in axios headers
 export const setAuthToken = (token) => {
   if (token) {
-    axios.defaults.headers.common['Authorization'] = `JWT ${token}`;
+    authAxios.defaults.headers.common['Authorization'] = `JWT ${token}`;
   } else {
-    delete axios.defaults.headers.common['Authorization'];
+    delete authAxios.defaults.headers.common['Authorization'];
   }
 };
 
@@ -41,9 +46,9 @@ const authService = {
   },
   
   register: async (userData) => {
-    if (token) {
-      setAuthToken(null);
-    }
+    // if (token) {
+    //   setAuthToken(null);
+    // }
     try {
       const response = await axios.post('/auth/users/', userData);
       return response.data;
@@ -54,7 +59,7 @@ const authService = {
   
   fetchCurrentUser: async () => {
     try {
-      const response = await axios.get('/api/user/');
+      const response = await authAxios.get('/api/user/');
       return response.data;
     } catch (error) {
       throw error;
@@ -110,7 +115,7 @@ const authService = {
   // services/authService.js
 fetchUserProfile: async () => {
   try {
-    const response = await axios.get('/api/profile/');
+    const response = await authAxios.get('/api/profile/');
     return response.data;
   } catch (error) {
     throw error;
@@ -119,7 +124,7 @@ fetchUserProfile: async () => {
 
 updateUserProfile: async (profileData) => {
   try {
-    const response = await axios.patch('/api/profile/', profileData, {
+    const response = await authAxios.patch('/api/profile/', profileData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
