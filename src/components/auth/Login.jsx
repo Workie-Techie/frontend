@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useDispatch, useSelector } from 'react-redux';
-import logoImage from '../../assets/react.svg';
+import logoImage from '../../assets/logo2.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -36,9 +36,9 @@ const Login = () => {
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
         <div className="text-center mb-8">
           {/* Replace with your actual logo */}
-          <img src={logoImage} alt="WorkieTechie Logo" className="h-12 mx-auto mb-2" />
+          <img src={logoImage} alt="WorkieTechie Logo" className="h-18 mx-auto mb-2" />
           <h2 className="text-2xl font-bold text-gray-800">Login to your account</h2>
-          <p className="text-amber-500 mt-2">Gain access to your account</p>
+          <p className="text-workie-gold mt-2">Gain access to your account</p>
         </div>
         
         {(error || formError) && (
@@ -58,7 +58,7 @@ const Login = () => {
               type="email"
               autoComplete="email"
               required
-              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm"
+              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-workie-gold focus:border-workie-gold focus:z-10 sm:text-sm"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -77,7 +77,7 @@ const Login = () => {
               type="password"
               autoComplete="current-password"
               required
-              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm"
+              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-workie-gold focus:border-workie-gold focus:z-10 sm:text-sm"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -90,7 +90,7 @@ const Login = () => {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-300 rounded"
+                className="h-4 w-4 text-workie-gold focus:ring-workie-gold border-gray-300 rounded"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Keep me logged in
@@ -98,7 +98,7 @@ const Login = () => {
             </div>
             
             <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-amber-500 hover:text-amber-600">
+              <Link to="/forgot-password" className="font-medium text-workie-gold hover:text-amber-600">
                 Forgot password?
               </Link>
             </div>
@@ -108,7 +108,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-workie-gold hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-workie-gold"
             >
               {loading ? 'Signing in...' : 'Login'}
             </button>
@@ -117,7 +117,7 @@ const Login = () => {
           <div className="text-sm text-center mt-4">
             <p className="text-gray-600">
               Don't have an account?&nbsp;
-              <Link to="/register" className="font-medium text-amber-500 hover:text-amber-600">
+              <Link to="/register" className="font-medium text-workie-gold hover:text-amber-600">
                 Create an account
               </Link>
             </p>

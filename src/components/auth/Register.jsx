@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import logoImage from '../../assets/react.svg'; // You'll need to add a logo image
+import logoImage from '../../assets/logo2.png'; // You'll need to add a logo image
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -76,9 +76,9 @@ const Register = () => {
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-md">
         <div className="text-center mb-8">
           {/* Replace with your actual logo */}
-          <img src={logoImage} alt="WorkieTechie Logo" className="h-12 mx-auto mb-2" />
+          <img src={logoImage} alt="WorkieTechie Logo" className="h-18 mx-auto mb-2" />
           <h2 className="text-2xl font-bold text-gray-800">Create your account</h2>
-          <p className="text-amber-500 mt-2">Join our platform today</p>
+          <p className="text-workie-gold mt-2">Join our platform today</p>
         </div>
         
         {(error || formError) && (
@@ -98,7 +98,7 @@ const Register = () => {
               type="text"
               autoComplete="username"
               required
-              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm"
+              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-workie-gold focus:border-workie-gold focus:z-10 sm:text-sm"
               placeholder="Username"
               value={formData.username}
               onChange={handleChange}
@@ -115,7 +115,7 @@ const Register = () => {
               type="email"
               autoComplete="email"
               required
-              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm"
+              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-workie-gold focus:border-workie-gold focus:z-10 sm:text-sm"
               placeholder="Email address"
               value={formData.email}
               onChange={handleChange}
@@ -132,7 +132,7 @@ const Register = () => {
               type="password"
               autoComplete="new-password"
               required
-              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm"
+              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-workie-gold focus:border-workie-gold focus:z-10 sm:text-sm"
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
@@ -149,7 +149,7 @@ const Register = () => {
               type="password"
               autoComplete="new-password"
               required
-              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-amber-500 focus:border-amber-500 focus:z-10 sm:text-sm"
+              className="appearance-none relative block w-full px-3 py-3 bg-[#EAF0F7] rounded-md focus:outline-none focus:ring-workie-gold focus:border-workie-gold focus:z-10 sm:text-sm"
               placeholder="Confirm Password"
               value={formData.re_password}
               onChange={handleChange}
@@ -160,13 +160,13 @@ const Register = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
             <div className="grid grid-cols-2 gap-4">
               <div 
-                className={`border rounded-md p-3 flex items-center justify-center cursor-pointer ${formData.is_client ? 'bg-amber-100 border-amber-500 text-amber-700' : 'border-gray-300 text-gray-700'}`}
+                className={`border rounded-md p-3 flex items-center justify-center cursor-pointer ${formData.is_client ? 'bg-amber-100 border-workie-gold text-amber-700' : 'border-gray-300 text-gray-700'}`}
                 onClick={() => handleUserTypeChange('client')}
               >
                 <span className="text-sm font-medium">Client</span>
               </div>
               <div 
-                className={`border rounded-md p-3 flex items-center justify-center cursor-pointer ${formData.is_freelancer ? 'bg-amber-100 border-amber-500 text-amber-700' : 'border-gray-300 text-gray-700'}`}
+                className={`border rounded-md p-3 flex items-center justify-center cursor-pointer ${formData.is_freelancer ? 'bg-amber-100 border-workie-gold text-amber-700' : 'border-gray-300 text-gray-700'}`}
                 onClick={() => handleUserTypeChange('freelancer')}
               >
                 <span className="text-sm font-medium">Freelancer</span>
@@ -178,7 +178,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-amber-500 hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-workie-gold hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-workie-gold"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
@@ -187,7 +187,7 @@ const Register = () => {
           <div className="text-sm text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-amber-500 hover:text-amber-600">
+              <Link to="/login" className="font-medium text-workie-gold hover:text-amber-600">
                 Sign in
               </Link>
             </p>

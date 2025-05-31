@@ -1,6 +1,9 @@
-import React from 'react';
+import React, {useState} from 'react';
 import Button from '../../common/Button';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from "framer-motion";
+import Lottie from 'react-lottie';
+import wtb from '../../assets/wtb.json';
+import wty from '../../assets/wty.json';
 import { FiArrowRight, FiUsers, FiDollarSign, FiShield } from 'react-icons/fi';
 // Consider a relevant background image or video here for a more modern feel
 // import heroBg from '../assets/images/hero-background.jpg'; // Example
@@ -11,10 +14,30 @@ const Hero = () => {
     visible: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.3 } },
   };
 
+  // const itemVariants = (delay = 0) => ({
+  //   hidden: { opacity: 0, y: 30 },
+  //   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut', delay } },
+  // });
+
+  const [animationComplete, setAnimationComplete] = useState(false);
+  const [fullyHidden, setFullyHidden] = useState(false);
+
   const itemVariants = (delay = 0) => ({
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut', delay } },
+    fadeOut: { opacity: 0, transition: { duration: 0.3, ease: 'easeOut' } }, // Faster fade-out
+    completely_hidden: { opacity: 0, display: 'none' } // Final hidden state
   });
+
+  const defaultOptions = {
+    loop: false,
+    autoplay: true,
+    animationData: wty,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice"
+    }
+  };
+
 
   // Style for background image (if you use one)
   // const heroStyle = {
@@ -30,6 +53,33 @@ const Hero = () => {
       <div className="absolute inset-0 bg-black opacity-20"></div> {/* Subtle overlay */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
+        <motion.div
+          variants={itemVariants()}
+          animate={
+            fullyHidden ? 'completely_hidden' : 
+            animationComplete ? 'fadeOut' : 
+            'visible'
+          }
+          onAnimationComplete={(definition) => {
+            // When fade-out animation completes, set to fully hidden
+            if (definition === 'fadeOut') {
+              setFullyHidden(true);
+            }
+          }}
+          className={fullyHidden ? 'hidden' : 'mt-[-100px]'} // Tailwind hidden class as backup
+        >
+          <Lottie 
+            options={defaultOptions}
+            height={270}
+            width={270}
+            eventListeners={[
+              {
+                eventName: 'complete',
+                callback: () => setAnimationComplete(true),
+              }
+            ]}
+          />
+        </motion.div>
           <motion.h1
             variants={itemVariants()}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight"

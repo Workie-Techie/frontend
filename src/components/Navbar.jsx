@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/logo2.png';
+import logow from '../assets/logow.png';
 import Button from '../common/Button';
 import { HiMenuAlt3, HiX } from 'react-icons/hi';
 import { motion } from 'framer-motion';
@@ -33,7 +34,12 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <a href="/" className="flex-shrink-0">
-            <img className="h-10 sm:h-12 w-auto" src={logo} alt="WorkieTechie" />
+            {isScrolled ?
+              <img className="h-12 sm:h-12 w-auto" src={logo} alt="WorkieTechie" /> 
+              : 
+              <img className="h-12 sm:h-12 w-auto" src={logow} alt="WorkieTechie" />
+            }
+            
           </a>
           <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {navLinks.map(link => (
