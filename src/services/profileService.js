@@ -1,101 +1,158 @@
-import axios from 'axios';
+import { privateApi, publicApi } from "./authService";
 
-const API_URL = 'http://localhost:8000';
-
-// Create a separate axios instance for public requests (without auth headers)
-const publicAxios = axios.create({
-  baseURL: API_URL
-});
-
-const privateAxios = axios.create({
-  baseURL: API_URL
-});
-
-export const setAuthToken = (token) => {
-  if (token) {
-    privateAxios.defaults.headers.common['Authorization'] = `JWT ${token}`;
-  } else {
-    delete privateAxios.defaults.headers.common['Authorization'];
+const unwrapList = (data) => {
+  if (Array.isArray(data)) {
+    return data;
   }
+  if (Array.isArray(data?.results)) {
+    return data.results;
+  }
+  return [];
 };
 
-// Initialize with token from localStorage if it exists
-const token = localStorage.getItem('token');
-if (token) {
-  setAuthToken(token);
-  // console.log(token)
-}
-
-
 const profileService = {
-  // Fetch a public profile by slug - explicitly sends request without auth headers
-  getPublicProfile: async (profileSlug) => {
-    try {
-      const response = await publicAxios.get(`${API_URL}/api/profile/freelancer/${profileSlug}/`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching public profile:', error);
-      throw error;
-    }
-  },
- 
-  // Get list of freelancers (optional, for a freelancer directory)
-  getFreelancers: async (page = 1, filters = {}) => {
-    try {
-      // Explicitly create request config WITHOUT authorization headers
-      const config = {
-        params: { page, ...filters }
-      };
-      
-      const response = await publicAxios.get(`${API_URL}/api/profile/freelancers/`, config);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching freelancers:', error);
-      throw error;
-    }
+  getLandingContent: async () => {
+    const response = await publicApi.get("/api/profile/landing-content/");
+    return unwrapList(response.data);
   },
 
-  // Get available skills - uses the privateAxios instance with auth headers
+  getExpertiseCategories: async () => {
+    const response = await publicApi.get("/api/profile/expertise-categories/");
+    return unwrapList(response.data);
+  },
+
+  getBanks: async () => {
+    const response = await privateApi.get("/api/profile/banks/");
+    return unwrapList(response.data);
+  },
+
+  getQuestionSets: async (audience, categoryId) => {
+    const response = await publicApi.get("/api/profile/question-sets/", {
+      params: {
+        audience,
+        ...(categoryId ? { category_id: categoryId } : {}),
+      },
+    });
+    return unwrapList(response.data);
+  },
+
+  getProfile: async () => {
+    const response = await privateApi.get("/api/profile/");
+    return response.data;
+  },
+
+  updateProfile: async (payload, isMultipart = false) => {
+    const response = await privateApi.patch("/api/profile/", payload, {
+      headers: isMultipart ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
+    return response.data;
+  },
+
+  saveProfessionalAnswers: async (answers) => {
+    const response = await privateApi.post("/api/profile/professional-answers/", { answers });
+    return response.data;
+  },
+
   getSkills: async () => {
-    try {
-      const response = await privateAxios.get('/api/profile/skills/');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching skills:', error);
-      throw error;
-    }
+    const response = await privateApi.get("/api/profile/skills/");
+    return unwrapList(response.data);
   },
-  createJob: async (jobData) => {
-    try {
-      const response = await privateAxios.post('/api/profile/jobs/', jobData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+
+  getClientRequests: async () => {
+    const response = await privateApi.get("/api/profile/client-requests/");
+    return unwrapList(response.data);
   },
-  updateJob: async (jobId, jobData) => {
-    try {
-      const response = await privateAxios.put(`/api/profile/jobs/${jobId}/`, jobData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+
+  getClientRequestDetail: async (requestId) => {
+    const response = await privateApi.get(`/api/profile/client-requests/${requestId}/`);
+    return response.data;
   },
-  deleteJob: async (jobId) => {
-    try {
-      await privateAxios.delete(`/api/profile/jobs/${jobId}/`);
-    } catch (error) {
-      throw error;
-    }
+
+  createClientRequest: async (payload) => {
+    const response = await privateApi.post("/api/profile/client-requests/", payload);
+    return response.data;
   },
-  getJob: async (jobId) => {
-     try {
-      const response = await privateAxios.get(`/api/profile/jobs/${jobId}/`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
+
+  getAssignments: async () => {
+    const response = await privateApi.get("/api/profile/assignments/");
+    return unwrapList(response.data);
+  },
+
+  actOnAssignment: async (assignmentId, action, responseText) => {
+    const response = await privateApi.post(`/api/profile/assignments/${assignmentId}/action/`, {
+      action,
+      response: responseText,
+    });
+    return response.data;
+  },
+
+  getThreads: async () => {
+    const response = await privateApi.get("/api/profile/threads/");
+    return unwrapList(response.data);
+  },
+
+  createThread: async (payload) => {
+    const response = await privateApi.post("/api/profile/threads/", payload);
+    return response.data;
+  },
+
+  sendMessage: async (threadId, body) => {
+    const response = await privateApi.post(`/api/profile/threads/${threadId}/messages/`, { body });
+    return response.data;
+  },
+
+  getBankAccounts: async () => {
+    const response = await privateApi.get("/api/profile/bank-accounts/");
+    return unwrapList(response.data);
+  },
+
+  createBankAccount: async (payload) => {
+    const response = await privateApi.post("/api/profile/bank-accounts/", payload);
+    return response.data;
+  },
+
+  getPayments: async () => {
+    const response = await privateApi.get("/api/profile/payments/");
+    return unwrapList(response.data);
+  },
+
+  createPayment: async (payload) => {
+    const response = await privateApi.post("/api/profile/payments/", payload, {
+      headers: payload instanceof FormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
+    return response.data;
+  },
+
+  getShareLinks: async () => {
+    const response = await privateApi.get("/api/profile/share-links/");
+    return unwrapList(response.data);
+  },
+
+  getPortfolioItems: async () => {
+    const response = await privateApi.get("/api/profile/portfolio-items/");
+    return unwrapList(response.data);
+  },
+
+  createPortfolioItem: async (payload) => {
+    const response = await privateApi.post("/api/profile/portfolio-items/", payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
+  deletePortfolioItem: async (itemId) => {
+    await privateApi.delete(`/api/profile/portfolio-items/${itemId}/`);
+  },
+
+  createShareLink: async (payload = {}) => {
+    const response = await privateApi.post("/api/profile/share-links/", payload);
+    return response.data;
+  },
+
+  getSharedProfile: async (token) => {
+    const response = await publicApi.get(`/api/profile/portfolio/${token}/`);
+    return response.data;
+  },
 };
 
 export default profileService;

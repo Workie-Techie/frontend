@@ -1,62 +1,91 @@
-import { useDispatch, useSelector } from 'react-redux';
-import { setToken, setRefreshToken, setUser, setLoading, setError, clearAuth } from '../store/authState';
-import authService, { setAuthToken } from '../services/authService';
-import { setProfile } from '../store/authState';
-import { useEffect } from 'react';
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-const API_URL = 'http://localhost:8000';
+import authService, { setAuthToken } from "../services/authService";
+import {
+  clearAuth,
+  setError,
+  setLoading,
+  setProfile,
+  setRefreshToken,
+  setToken,
+  setUser,
+} from "../store/authState";
+import profileService from "../services/profileService";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.auth.token);
-  const refreshToken = useSelector((state) => state.auth.refreshToken);
-  const user = useSelector((state) => state.auth.user);
-  const loading = useSelector((state) => state.auth.loading);
-  const error = useSelector((state) => state.auth.error);
+  const auth = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (token) {
-      setAuthToken(token);
+    if (auth.token) {
+      setAuthToken(auth.token);
     }
-  }, [token]);
+  }, [auth.token]);
+
+  const fetchCurrentUser = async () => {
+    dispatch(setLoading(true));
+    try {
+      const user = await authService.fetchCurrentUser();
+      dispatch(setUser(user));
+      dispatch(setError(null));
+      return user;
+    } catch (error) {
+      dispatch(setError("Unable to load your account."));
+      throw error;
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+
+  const fetchProfile = async () => {
+    const profile = await profileService.getProfile();
+    dispatch(setProfile(profile));
+    return profile;
+  };
+
+  const bootstrapAuth = async () => {
+    if (!auth.token) return null;
+    try {
+      const [user, profile] = await Promise.all([fetchCurrentUser(), fetchProfile()]);
+      return { user, profile };
+    } catch (error) {
+      return null;
+    }
+  };
 
   const login = async (email, password) => {
     dispatch(setLoading(true));
-    dispatch(setError(null));
     try {
-      const access = await authService.login(email, password);
-      dispatch(setToken(access));
-      
-      // Fetch user details
-      await fetchCurrentUser();
-      
+      const tokens = await authService.login(email, password);
+      dispatch(setToken(tokens.access));
+      dispatch(setRefreshToken(tokens.refresh));
+      await bootstrapAuth();
       return true;
-    } catch (err) {
-      console.error('Login error:', err);
-      dispatch(setError(err.response?.data?.detail || 'Invalid credentials'));
+    } catch (error) {
+      dispatch(setError(error.response?.data?.detail || "Invalid credentials."));
       return false;
     } finally {
       dispatch(setLoading(false));
     }
   };
 
-  const register = async (userData) => {
+  const register = async (payload) => {
     dispatch(setLoading(true));
-    dispatch(setError(null));
     try {
-      await authService.register(userData);
-      dispatch(setLoading(false));
+      await authService.register(payload);
+      dispatch(setError(null));
       return { success: true };
-    } catch (err) {
-      console.error('Registration error:', err);
-      if (err.response && err.response.data) {
-        const errorMessages = Object.values(err.response.data).flat().join(' ');
-        dispatch(setError(errorMessages));
-      } else {
-        dispatch(setError('Registration failed'));
-      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data &&
+        Object.values(error.response.data)
+          .flat()
+          .join(" ");
+      dispatch(setError(errorMessage || "We couldn't create your account."));
+      return { success: false };
+    } finally {
       dispatch(setLoading(false));
-      return false;
     }
   };
 
@@ -65,112 +94,22 @@ export const useAuth = () => {
     dispatch(clearAuth());
   };
 
-  const fetchCurrentUser = async () => {
-    try {
-      dispatch(setLoading(true));
-      const userData = await authService.fetchCurrentUser();
-      dispatch(setUser(userData));
-      dispatch(setError(null));
-      dispatch(setLoading(false));
-      return true;
-    } catch (err) {
-      console.error('Error fetching user:', err);
-      dispatch(setError('Failed to fetch user data'));
-      dispatch(setLoading(false));
-      return false;
-    }
-  };
-
-  const refreshAccessToken = async () => {
-    try {
-      const access = await authService.refreshToken();
-      dispatch(setToken(access));
-      return true;
-    } catch (err) {
-      console.error('Token refresh error:', err);
-      logout();
-      return false;
-    }
-  };
-
-  const activateAccount = async (uid, token) => {
-    try {
-      dispatch(setLoading(true));
-      dispatch(setError(null));
-      await authService.activateAccount(uid, token);
-      dispatch(setLoading(false));
-      return { success: true };
-    } catch (err) {
-      console.error('Activation error:', err);
-      if (err.response && err.response.data) {
-        const errorMessages = Object.values(err.response.data).flat().join(' ');
-        dispatch(setError(errorMessages));
-      } else {
-        dispatch(setError('Activation failed'));
-      }
-      dispatch(setLoading(false));
-      return { success: false };
-    }
-  };
-
-  const forgotPassword = async (email) => {
-    dispatch(setLoading(true));
-    dispatch(setError(null));
-    try {
-      await authService.forgotPassword(email);
-      dispatch(setLoading(false));
-      return { success: true };
-    } catch (err) {
-      console.error('Forgot password error:', err);
-      dispatch(setError(err.response?.data || 'Failed to send reset link'));
-      dispatch(setLoading(false));
-      return false;
-    }
-  };
-
-  const resetPasswordConfirm = async (uid, token, new_password, re_new_password) => {
-    dispatch(setLoading(true));
-    dispatch(setError(null));
-    try {
-      await authService.resetPasswordConfirm(uid, token, new_password, re_new_password);
-      dispatch(setLoading(false));
-      return { success: true };
-    } catch (err) {
-      console.error('Reset password confirm error:', err);
-      dispatch(setError(err.response?.data || 'Failed to reset password'));
-      dispatch(setLoading(false));
-      return false;
-    }
-  };
-
-
-const fetchUserProfile = async () => {
-  try {
-    const profile = await authService.fetchUserProfile();
-    dispatch(setProfile(profile));
-    return profile;
-  } catch (error) {
-    dispatch(setError('Failed to load profile'));
-    return null;
-  }
-};
-
+  const activateAccount = async (uid, token) => authService.activateAccount(uid, token);
+  const forgotPassword = async (email) => authService.forgotPassword(email);
+  const resetPasswordConfirm = async (uid, token, newPassword, confirmPassword) =>
+    authService.resetPasswordConfirm(uid, token, newPassword, confirmPassword);
 
   return {
-    user,
-    token,
-    loading,
-    error,
+    ...auth,
     login,
     register,
     logout,
-    refreshAccessToken,
+    fetchCurrentUser,
+    fetchProfile,
+    bootstrapAuth,
     activateAccount,
     forgotPassword,
     resetPasswordConfirm,
-    fetchCurrentUser,
-    fetchUserProfile,
-    updateUserProfile: authService.updateUserProfile,
   };
 };
 
