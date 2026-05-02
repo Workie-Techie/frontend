@@ -1,102 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import logo from '../assets/logo2.png';
-import logow from '../assets/logow.png';
-import Button from '../common/Button';
-import { HiMenuAlt3, HiX } from 'react-icons/hi';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
-const Navbar = () => {
+import logoImage from "../assets/logo2.png";
+
+const navLinks = [
+  { label: "How it works", to: "/#how-it-works" },
+  { label: "Trust process", to: "/#trust" },
+];
+
+const Navbar = ({ tone = "light" }) => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 12);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
-    { title: "How it Works", href: "#how-it-works" },
-    { title: "Services", href: "#services" },
-    { title: "Why Us?", href: "#why-us" },
-    { title: "For Talent", href: "#for-talent" },
-  ];
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  const navIsSolid = isScrolled || tone === "solid" || isOpen;
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed w-full z-50 top-0 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'}`}
-    >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          <a href="/" className="flex-shrink-0">
-            {isScrolled ?
-              <img className="h-12 sm:h-12 w-auto" src={logo} alt="WorkieTechie" /> 
-              : 
-              <img className="h-12 sm:h-12 w-auto" src={logow} alt="WorkieTechie" />
-            }
-            
-          </a>
-          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-            {navLinks.map(link => (
-              <a
-                key={link.title}
-                href={link.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${isScrolled || isOpen ? 'text-[#1A202C] hover:text-[#154B6C]' : 'text-white hover:text-[#E4C06A]'}`}
-              >
-                {link.title}
-              </a>
-            ))}
-            <Button primary className="ml-2 text-xs sm:text-sm px-4 py-2 sm:px-6 sm:py-2.5">Hire Talent</Button>
-            <Button secondary outline={!isScrolled} className={`ml-2 text-xs sm:text-sm px-4 py-2 sm:px-6 sm:py-2.5 ${isScrolled ? 'border-[#154B6C] text-[#154B6C] hover:bg-[#154B6C] hover:text-white' : 'border-white text-white hover:bg-white hover:text-[#154B6C]'}`}>Join WorkieTechie</Button>
-          </div>
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              type="button"
-              className={`p-2 rounded-md focus:outline-none ${isScrolled ? 'text-[#154B6C] hover:text-[#DF9F27]' : 'text-white hover:text-[#E4C06A]'}`}
-              aria-controls="mobile-menu"
-              aria-expanded={isOpen}
-            >
-              <span className="sr-only">Open main menu</span>
-              {isOpen ? <HiX className="h-6 w-6" /> : <HiMenuAlt3 className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-      </div>
+    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8">
+      <motion.nav
+        initial={{ y: -18, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className={`mx-auto max-w-7xl rounded-full border px-4 py-3 backdrop-blur-xl transition-all duration-300 ${
+          navIsSolid
+            ? "border-white/80 bg-white/90 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
+            : "border-white/70 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.06)]"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-3" aria-label="WorkieTechie home">
+            <img src={logoImage} alt="WorkieTechie" className="h-11 w-auto" />
+          </Link>
 
-      {/* Mobile menu */}
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="md:hidden bg-white shadow-xl"
-          id="mobile-menu"
-        >
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map(link => (
-              <a
-                key={link.title}
-                href={link.href}
-                className="text-[#4A5568] hover:bg-[#F7FAFC] hover:text-[#154B6C] block px-3 py-2 rounded-md text-base font-medium"
+          <div className="hidden items-center gap-1 lg:flex">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.to}
                 onClick={() => setIsOpen(false)}
+                className="rounded-full px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-workie-blue"
               >
-                {link.title}
-              </a>
+                {link.label}
+              </Link>
             ))}
-            <div className="pt-4 pb-2 px-2 space-y-3">
-              <Button primary className="w-full">Hire Talent</Button>
-              <Button secondary className="w-full">Join WorkieTechie</Button>
-            </div>
           </div>
-        </motion.div>
-      )}
-    </motion.nav>
+
+          <div className="hidden items-center gap-3 sm:flex">
+            <Link to="/login" className="rounded-full px-4 py-2.5 text-sm font-semibold text-workie-blue transition hover:bg-slate-100">
+              Login
+            </Link>
+            <Link to="/register" className="rounded-full bg-workie-gold px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-amber-500">
+              Create account
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsOpen((value) => !value)}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-workie-blue shadow-sm transition hover:border-workie-gold lg:hidden"
+            aria-expanded={isOpen}
+            aria-label="Toggle navigation menu"
+          >
+            <span className="sr-only">Menu</span>
+            <span
+              className={`absolute h-0.5 w-5 rounded-full bg-current transition ${isOpen ? "rotate-45" : "-translate-y-1.5"}`}
+            />
+            <span className={`absolute h-0.5 w-5 rounded-full bg-current transition ${isOpen ? "opacity-0" : "opacity-100"}`} />
+            <span
+              className={`absolute h-0.5 w-5 rounded-full bg-current transition ${isOpen ? "-rotate-45" : "translate-y-1.5"}`}
+            />
+          </button>
+        </div>
+      </motion.nav>
+
+      <AnimatePresence>
+        {isOpen ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.22 }}
+            className="mx-auto mt-3 max-w-7xl overflow-hidden rounded-[28px] border border-white/80 bg-white/95 p-3 shadow-[0_22px_70px_rgba(15,23,42,0.18)] backdrop-blur-xl lg:hidden"
+          >
+            <div className="grid gap-1">
+              {navLinks.map((link) => (
+                <Link
+                key={link.label}
+                to={link.to}
+                onClick={() => setIsOpen(false)}
+                className="rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-workie-blue"
+              >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3">
+              <Link to="/register" onClick={() => setIsOpen(false)} className="rounded-2xl bg-workie-gold px-4 py-3 text-center text-sm font-semibold text-white">
+                Create account
+              </Link>
+              <Link to="/login" onClick={() => setIsOpen(false)} className="rounded-2xl border border-slate-200 px-4 py-3 text-center text-sm font-semibold text-workie-blue">
+                Login
+              </Link>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </header>
   );
 };
 

@@ -19,7 +19,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 pb-10 pt-28 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_0.9fr]">
         <div className="shell-card bg-gradient-to-br from-[#12354b] via-workie-blue to-workie-blue-light p-8 text-white sm:p-10">
           <img src={logoImage} alt="WorkieTechie" className="h-14 w-auto" />

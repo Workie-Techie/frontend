@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import DynamicQuestionField from "../common/DynamicQuestionField";
 import profileService from "../services/profileService";
 
 const flattenQuestionSets = (questionSets) =>
@@ -83,7 +84,7 @@ const ClientRequestPage = () => {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">Client intake</p>
               <h1 className="shell-title mt-2 text-4xl font-bold text-slate-900">Submit a structured project request</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Give the admin team a clear brief with your timeline, budget, and skill-specific requirements so they can qualify the project and match the right professional.
+                Give the admin team a clear brief with your timeline, budget, and service-specific requirements so they can qualify the project and match the right professional.
               </p>
             </div>
             <Link to="/dashboard" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">
@@ -184,19 +185,16 @@ const ClientRequestPage = () => {
           {questions.length ? (
             <div className="mt-8 rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">Project-specific questions</p>
-              <div className="mt-4 grid gap-4">
-                {questions.map((question) => (
-                  <label key={question.id} className="text-sm font-medium text-slate-700">
-                    {question.text}
-                    <input
+                <div className="mt-4 grid gap-4">
+                  {questions.map((question) => (
+                    <DynamicQuestionField
+                      key={question.id}
+                      question={question}
                       value={answers[question.id] || ""}
-                      onChange={(event) => setAnswers((prev) => ({ ...prev, [question.id]: event.target.value }))}
-                      placeholder={question.placeholder || "Add details"}
-                      className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-workie-gold"
+                      onChange={(value) => setAnswers((prev) => ({ ...prev, [question.id]: value }))}
                     />
-                  </label>
-                ))}
-              </div>
+                  ))}
+                </div>
             </div>
           ) : null}
 

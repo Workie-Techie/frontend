@@ -26,6 +26,21 @@ const profileService = {
     return unwrapList(response.data);
   },
 
+  getBrowseSettings: async () => {
+    const response = await privateApi.get("/api/profile/browse/settings/");
+    return response.data;
+  },
+
+  getBrowseCategories: async () => {
+    const response = await privateApi.get("/api/profile/browse/categories/");
+    return unwrapList(response.data);
+  },
+
+  getBrowseProfiles: async (params = {}) => {
+    const response = await privateApi.get("/api/profile/browse/profiles/", { params });
+    return unwrapList(response.data);
+  },
+
   getQuestionSets: async (audience, categoryId) => {
     const response = await publicApi.get("/api/profile/question-sets/", {
       params: {
@@ -51,11 +66,6 @@ const profileService = {
   saveProfessionalAnswers: async (answers) => {
     const response = await privateApi.post("/api/profile/professional-answers/", { answers });
     return response.data;
-  },
-
-  getSkills: async () => {
-    const response = await privateApi.get("/api/profile/skills/");
-    return unwrapList(response.data);
   },
 
   getClientRequests: async () => {
@@ -133,10 +143,21 @@ const profileService = {
     return unwrapList(response.data);
   },
 
+  uploadMediaAsset: async (file, usage = "portfolio", onUploadProgress) => {
+    const payload = new FormData();
+    payload.append("file", file);
+    payload.append("usage", usage);
+    const response = await privateApi.post("/api/profile/media-assets/", payload, { onUploadProgress });
+    return response.data;
+  },
+
   createPortfolioItem: async (payload) => {
-    const response = await privateApi.post("/api/profile/portfolio-items/", payload, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await privateApi.post("/api/profile/portfolio-items/", payload);
+    return response.data;
+  },
+
+  updatePortfolioItem: async (itemId, payload) => {
+    const response = await privateApi.patch(`/api/profile/portfolio-items/${itemId}/`, payload);
     return response.data;
   },
 

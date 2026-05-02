@@ -58,6 +58,25 @@ a {
 .status-pill {
   @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide;
 }
+
+a.bg-workie-blue,
+button.bg-workie-blue,
+a.bg-workie-blue-light,
+button.bg-workie-blue-light,
+a.bg-workie-gold,
+button.bg-workie-gold {
+  color: #ffffff;
+}
+
+a.bg-workie-blue:hover,
+button.bg-workie-blue:hover,
+a.bg-workie-blue-light:hover,
+button.bg-workie-blue-light:hover,
+a.bg-workie-gold:hover,
+button.bg-workie-gold:hover {
+  color: #ffffff;
+}
+
 /* Custom scrollbar for a modern touch (optional) */
 ::-webkit-scrollbar {
     width: 10px;

@@ -75,6 +75,16 @@ const SharedPortfolioPage = () => {
                       <div className="p-4">
                         <h3 className="text-sm font-semibold text-slate-900">{item.title || "Portfolio item"}</h3>
                         <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                        {item.project_url ? (
+                          <a
+                            href={item.project_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-4 inline-flex rounded-full bg-workie-blue px-4 py-2 text-xs font-semibold !text-white"
+                          >
+                            Open project
+                          </a>
+                        ) : null}
                       </div>
                     </div>
                   ))}

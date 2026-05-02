@@ -2,60 +2,59 @@ import { useMemo, useState } from "react";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import logoImage from "../assets/logo2.png";
 import profileService from "../services/profileService";
 
 const audienceContent = {
   clients: {
     eyebrow: "For clients",
-    title: "A polished, admin-managed way to source premium Nigerian talent.",
-    body: "Submit one structured request, get matched by the WorkieTechie team, approve with confidence, and keep every delivery conversation in one premium client portal.",
+    title: "Find vetted professionals with a process built for quality delivery.",
+    body: "Submit a clear request, get matched with the right professional, track progress with confidence, and complete work through a process designed for accountability and satisfaction.",
     ctaPrimary: { label: "Start a project request", to: "/register" },
     ctaSecondary: { label: "Login as a client", to: "/login" },
     pillars: [
-      "Structured intake with admin-configured project questions",
-      "Private portfolio links shared only when relevant",
-      "Payment tracking, approvals, and dispute support in one place",
+      "Structured intake that captures the details needed for a strong match",
+      "Vetted professional profiles and portfolio signals before work begins",
+      "Progress tracking, approvals, and support when expectations need alignment",
     ],
     process: [
       "Submit your brief with category-specific details",
-      "WorkieTechie qualifies the request and aligns payment steps",
-      "Admins match the right professional and manage delivery",
+      "WorkieTechie reviews the request and prepares the right match",
+      "Delivery moves through clear communication, feedback, and approval steps",
     ],
-    proof: "Built for founders, teams, and operators who want premium output without a chaotic marketplace experience.",
+    proof: "Built for founders, teams, and operators who want dependable professionals, clearer accountability, and less risk than a chaotic marketplace.",
   },
   professionals: {
     eyebrow: "For professionals",
-    title: "Build a standout profile and get matched to the right client work.",
-    body: "WorkieTechie is not another noisy job board. You create a premium profile, answer skill-specific intake questions, stay assignment-ready, and collaborate through a structured admin-led workflow.",
+    title: "Build a trusted profile and get considered for better-fit client work.",
+    body: "WorkieTechie helps serious professionals present their expertise clearly, stay ready for quality opportunities, and deliver through a process that protects standards on both sides.",
     ctaPrimary: { label: "Join as a professional", to: "/register" },
     ctaSecondary: { label: "Login to your hub", to: "/login" },
     pillars: [
       "Primary expertise and specialization-based onboarding",
-      "Assignment inbox with accept or decline workflow",
-      "Portfolio, payout details, and admin messaging in one dashboard",
+      "Assignment inbox with clear accept or decline workflow",
+      "Portfolio, payout details, and project communication in one dashboard",
     ],
     process: [
       "Complete your profile and expertise-led onboarding",
-      "Stay visible to the admin matching team",
-      "Receive assignments, manage delivery updates, and get paid manually after completion",
+      "Stay visible for vetted matching opportunities",
+      "Receive assignments, manage delivery updates, and get paid after confirmed completion",
     ],
-    proof: "Built for serious Nigerian professionals who want quality visibility, better-fit projects, and a more curated operating model.",
+    proof: "Built for serious Nigerian professionals who want quality visibility, better-fit projects, and a delivery process that values accountability.",
   },
 };
 
 const sectionCards = [
   {
-    title: "Admin-configured workflows",
-    text: "Categories, specializations, intake questions, and key operational settings are designed to live in the admin surface so product adjustments do not always require development work.",
+    title: "Vetted intake and matching",
+    text: "Service categories, specializations, and intake questions help WorkieTechie understand the work before matching clients with professionals.",
   },
   {
-    title: "Private talent pool architecture",
-    text: "Professional portfolio pages still exist, but they are unlisted and intended for admin-mediated sharing with clients instead of public directory browsing.",
+    title: "Quality-first talent visibility",
+    text: "Professional portfolios can be reviewed through controlled visibility, so clients see relevant proof without turning the platform into a noisy directory.",
   },
   {
-    title: "MVP-friendly communication",
-    text: "Threaded inboxes and status history keep clients and professionals aligned with the admin team without requiring a costly realtime stack.",
+    title: "Accountable communication",
+    text: "Threaded messages, status history, approvals, and dispute paths keep expectations clear from request to completion.",
   },
 ];
 
@@ -83,25 +82,9 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="px-4 pt-5 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/80 bg-white/85 px-5 py-3 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logoImage} alt="WorkieTechie" className="h-11 w-auto" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="hidden text-sm font-semibold text-workie-blue sm:inline-flex">
-              Login
-            </Link>
-            <Link to="/register" className="rounded-full bg-workie-gold px-4 py-2 text-sm font-semibold text-white">
-              Create account
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="px-4 pb-14 pt-8 sm:px-6 lg:px-8">
+      <main className="px-4 pb-14 pt-28 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
-          <section className="shell-card overflow-hidden p-8 sm:p-10 lg:p-12">
+          <section id="clients" className="shell-card scroll-mt-28 overflow-hidden p-8 sm:p-10 lg:p-12">
             <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
               <div>
                 <div className="inline-flex rounded-full bg-slate-100 p-1">
@@ -160,7 +143,7 @@ const HomePage = () => {
             </div>
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-3">
+          <section id="professionals" className="scroll-mt-28 grid gap-6 lg:grid-cols-3">
             {sectionCards.map((card) => (
               <article key={card.title} className="shell-panel p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-gold">Foundation</p>
@@ -170,10 +153,10 @@ const HomePage = () => {
             ))}
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <section id="how-it-works" className="scroll-mt-28 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="shell-panel p-6 sm:p-8">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">How it works</p>
-              <h2 className="shell-title mt-2 text-3xl font-bold text-slate-900">A curated operational model, not a crowded marketplace.</h2>
+              <h2 className="shell-title mt-2 text-3xl font-bold text-slate-900">A guided matching process, not a crowded marketplace.</h2>
               <div className="mt-6 space-y-4">
                 {content.process.map((step, index) => (
                   <div key={step} className="flex gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -186,13 +169,13 @@ const HomePage = () => {
               </div>
             </div>
 
-            <div className="shell-card bg-gradient-to-br from-workie-gold via-[#f0b548] to-[#f7cf88] p-8 text-[#183b56] sm:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em]">Designed for an MVP with discipline</p>
+            <div id="trust" className="shell-card scroll-mt-28 bg-gradient-to-br from-workie-gold via-[#f0b548] to-[#f7cf88] p-8 text-[#183b56] sm:p-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em]">Built for trust on both sides</p>
               <h2 className="shell-title mt-3 text-4xl font-bold leading-tight">
-                Premium UX now, with a future path to a broader marketplace later.
+                Better matches, clearer expectations, and work both sides can stand behind.
               </h2>
               <p className="mt-5 max-w-2xl text-sm leading-7">
-                WorkieTechie's current product focus is admin-led matching, structured project intake, private portfolio sharing, and clean communication. That foundation keeps the product operationally strong today while leaving room for future self-serve discovery and marketplace features.
+                Clients get a calmer way to find dependable professionals. Professionals get a better way to be considered for work that fits their strengths. Everyone gets clearer communication, visible progress, and a process built around satisfaction before, during, and after delivery.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link to="/register" className="rounded-full bg-workie-blue px-5 py-3 text-sm font-semibold text-white">

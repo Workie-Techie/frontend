@@ -1,22 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import DynamicQuestionField from "../common/DynamicQuestionField";
 import useAuth from "../hooks/useAuth";
 import profileService from "../services/profileService";
+
+const getFriendlyBankError = (detail) => {
+  if (detail?.includes("PAYSTACK_SECRET_KEY")) {
+    return "Bank verification is not configured yet. Please contact support before adding payout details.";
+  }
+  return detail || "Bank list is temporarily unavailable. Please try again shortly.";
+};
 
 const EditProfile = () => {
   const { user, profile, fetchProfile } = useAuth();
   const [categories, setCategories] = useState([]);
   const [questionSets, setQuestionSets] = useState([]);
-  const [shareLinks, setShareLinks] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [banks, setBanks] = useState([]);
-  const [portfolioItems, setPortfolioItems] = useState([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [bankMessage, setBankMessage] = useState("");
   const [bankDirectoryMessage, setBankDirectoryMessage] = useState("");
-  const [portfolioMessage, setPortfolioMessage] = useState("");
+  const [bankVerifying, setBankVerifying] = useState(false);
+  const [isChangingBankAccount, setIsChangingBankAccount] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
     title: "",
@@ -27,59 +35,59 @@ const EditProfile = () => {
     certifications: "",
     hourly_rate: "",
     profile_status: "draft",
-    skill_ids: [],
     specialization_ids: [],
   });
   const [answerMap, setAnswerMap] = useState({});
   const [bankForm, setBankForm] = useState({ bank_code: "", bank_name: "", account_number: "" });
-  const [portfolioForm, setPortfolioForm] = useState({ title: "", description: "" });
 
-  const loadPage = async () => {
-    const [profileData, categoriesData, linkData] = await Promise.all([
-      fetchProfile(),
-      profileService.getExpertiseCategories(),
-      user?.is_freelancer ? profileService.getShareLinks().catch(() => []) : Promise.resolve([]),
-    ]);
-
-    setCategories(categoriesData);
-    setShareLinks(linkData);
-    if (user?.is_freelancer) {
-      const [accounts, portfolio, bankDirectory] = await Promise.all([
-        profileService.getBankAccounts().catch(() => []),
-        profileService.getPortfolioItems().catch(() => []),
-        profileService.getBanks().catch(() => null),
+  const loadPage = async (forceProfile = false) => {
+    setPageLoading(true);
+    try {
+      const [profileData, categoriesData] = await Promise.all([
+        fetchProfile({ force: forceProfile }),
+        profileService.getExpertiseCategories(),
       ]);
-      setBankAccounts(accounts);
-      setPortfolioItems(portfolio);
-      if (bankDirectory) {
-        setBanks(bankDirectory);
-        setBankDirectoryMessage("");
-      } else {
-        setBanks([]);
-        setBankDirectoryMessage("Bank list is temporarily unavailable. Please try again shortly.");
+
+      setCategories(categoriesData);
+      if (user?.is_freelancer) {
+        const [accounts, bankDirectory] = await Promise.all([
+          profileService.getBankAccounts().catch(() => []),
+          profileService.getBanks().catch((error) => ({
+            error: getFriendlyBankError(error?.response?.data?.detail),
+          })),
+        ]);
+        setBankAccounts(Array.isArray(accounts) ? accounts : []);
+        if (Array.isArray(bankDirectory)) {
+          setBanks(bankDirectory);
+          setBankDirectoryMessage("");
+        } else {
+          setBanks([]);
+          setBankDirectoryMessage(bankDirectory?.error || "Bank list is temporarily unavailable. Please try again shortly.");
+        }
       }
+
+      setForm({
+        name: profileData?.name || "",
+        title: profileData?.title || "",
+        bio: profileData?.bio || "",
+        city: profileData?.city || "",
+        state: profileData?.state || "",
+        business_name: profileData?.business_name || "",
+        certifications: profileData?.certifications || "",
+        hourly_rate: profileData?.hourly_rate || "",
+        profile_status: profileData?.profile_status || "draft",
+        specialization_ids: profileData?.specializations?.map((item) => item.id) || [],
+      });
+
+      const answers =
+        profileData?.question_answers?.reduce((accumulator, item) => {
+          accumulator[item.question.id] = item.value;
+          return accumulator;
+        }, {}) || {};
+      setAnswerMap(answers);
+    } finally {
+      setPageLoading(false);
     }
-
-    setForm({
-      name: profileData?.name || "",
-      title: profileData?.title || "",
-      bio: profileData?.bio || "",
-      city: profileData?.city || "",
-      state: profileData?.state || "",
-      business_name: profileData?.business_name || "",
-      certifications: profileData?.certifications || "",
-      hourly_rate: profileData?.hourly_rate || "",
-      profile_status: profileData?.profile_status || "draft",
-      skill_ids: profileData?.skills?.map((skill) => skill.id) || [],
-      specialization_ids: profileData?.specializations?.map((item) => item.id) || [],
-    });
-
-    const answers =
-      profileData?.question_answers?.reduce((accumulator, item) => {
-        accumulator[item.question.id] = item.value;
-        return accumulator;
-      }, {}) || {};
-    setAnswerMap(answers);
   };
 
   useEffect(() => {
@@ -99,6 +107,11 @@ const EditProfile = () => {
     () => categories.find((category) => category.id === profile?.expertise_category?.id),
     [categories, profile?.expertise_category?.id]
   );
+  const verifiedBankAccount = useMemo(
+    () => bankAccounts.find((account) => account.status === "verified") || null,
+    [bankAccounts]
+  );
+  const shouldShowBankForm = !verifiedBankAccount || isChangingBankAccount;
 
   const saveProfile = async (event) => {
     event.preventDefault();
@@ -128,16 +141,11 @@ const EditProfile = () => {
           }))
         );
       }
-      await loadPage();
+      await loadPage(true);
       setMessage("Profile updated successfully.");
     } finally {
       setSaving(false);
     }
-  };
-
-  const createShareLink = async () => {
-    await profileService.createShareLink({});
-    setShareLinks(await profileService.getShareLinks());
   };
 
   const verifyBankAccount = async (event) => {
@@ -147,30 +155,24 @@ const EditProfile = () => {
       setBankMessage("Choose your bank and enter your account number.");
       return;
     }
-    await profileService.createBankAccount(bankForm);
-    setBankAccounts(await profileService.getBankAccounts());
-    setBankForm({ bank_code: "", bank_name: "", account_number: "" });
-    setBankMessage("Bank details submitted for verification.");
-  };
-
-  const addPortfolioItem = async (event) => {
-    event.preventDefault();
-    const fileInput = document.getElementById("portfolio-image-input");
-    if (!fileInput?.files?.[0]) return;
-    const payload = new FormData();
-    payload.append("title", portfolioForm.title);
-    payload.append("description", portfolioForm.description);
-    payload.append("image", fileInput.files[0]);
-    await profileService.createPortfolioItem(payload);
-    setPortfolioItems(await profileService.getPortfolioItems());
-    setPortfolioForm({ title: "", description: "" });
-    fileInput.value = "";
-    setPortfolioMessage("Portfolio item added.");
-  };
-
-  const removePortfolioItem = async (itemId) => {
-    await profileService.deletePortfolioItem(itemId);
-    setPortfolioItems(await profileService.getPortfolioItems());
+    setBankVerifying(true);
+    try {
+      const verification = await profileService.createBankAccount(bankForm);
+      setBankAccounts(await profileService.getBankAccounts());
+      setBankForm({ bank_code: "", bank_name: "", account_number: "" });
+      if (verification?.status === "verified") {
+        setIsChangingBankAccount(false);
+      }
+      setBankMessage(
+        verification?.status === "verified"
+          ? "Bank details verified successfully."
+          : "Bank details submitted, but verification could not be completed yet."
+      );
+    } catch (error) {
+      setBankMessage(getFriendlyBankError(error?.response?.data?.detail || "Unable to verify this bank account right now."));
+    } finally {
+      setBankVerifying(false);
+    }
   };
 
   return (
@@ -191,8 +193,17 @@ const EditProfile = () => {
           </div>
         </div>
 
-        <form className="grid gap-6 xl:grid-cols-[1fr_0.8fr]" onSubmit={saveProfile}>
-          <div className="space-y-6">
+        {pageLoading ? (
+          <div className="shell-panel flex min-h-[420px] flex-col items-center justify-center p-8 text-center">
+            <div className="h-14 w-14 animate-spin rounded-full border-4 border-workie-blue border-t-transparent" />
+            <h2 className="shell-title mt-6 text-2xl font-bold text-slate-900">Loading your profile workspace</h2>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">
+              We are pulling your profile, payout setup, and configured questions.
+            </p>
+          </div>
+        ) : (
+        <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr]">
+          <form className="space-y-6" onSubmit={saveProfile}>
             <div className="shell-panel p-6">
               <h2 className="shell-title text-2xl font-bold text-slate-900">Core profile</h2>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -271,27 +282,23 @@ const EditProfile = () => {
 
             {user?.is_freelancer && questionSets.length ? (
               <div className="shell-panel p-6">
-                <h2 className="shell-title text-2xl font-bold text-slate-900">Skill-specific intake answers</h2>
+                <h2 className="shell-title text-2xl font-bold text-slate-900">Service-specific intake answers</h2>
                 <p className="mt-2 text-sm text-slate-600">
                   These questions are configured by the admin team for your chosen expertise area.
                 </p>
                 <div className="mt-6 space-y-5">
-                  {questionSets.flatMap((set) =>
-                    set.questions.map((question) => (
-                      <label key={question.id} className="block text-sm font-medium text-slate-700">
-                        {question.text}
-                        <input
+                    {questionSets.flatMap((set) =>
+                      set.questions.map((question) => (
+                        <DynamicQuestionField
+                          key={question.id}
+                          question={question}
                           value={answerMap[question.id] || ""}
-                          onChange={(event) =>
-                            setAnswerMap((prev) => ({ ...prev, [question.id]: event.target.value }))
-                          }
-                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold"
-                          placeholder={question.placeholder || "Add your answer"}
+                          onChange={(value) => setAnswerMap((prev) => ({ ...prev, [question.id]: value }))}
+                          inputClassName="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold"
                         />
-                      </label>
-                    ))
-                  )}
-                </div>
+                      ))
+                    )}
+                  </div>
               </div>
             ) : null}
 
@@ -304,7 +311,7 @@ const EditProfile = () => {
             >
               {saving ? "Saving..." : "Save profile updates"}
             </button>
-          </div>
+          </form>
 
           <div className="space-y-6">
             <div className="shell-panel p-6">
@@ -325,155 +332,128 @@ const EditProfile = () => {
             {user?.is_freelancer ? (
               <>
                 <div className="shell-panel p-6">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">Private portfolio links</p>
-                      <h2 className="shell-title mt-2 text-2xl font-bold text-slate-900">Client-shareable profile links</h2>
-                    </div>
-                    <button type="button" onClick={createShareLink} className="rounded-full bg-workie-blue px-4 py-2 text-sm font-semibold text-white">
-                      Create link
-                    </button>
-                  </div>
-                  <div className="mt-5 space-y-3">
-                    {shareLinks.length ? (
-                      shareLinks.map((link) => (
-                        <div key={link.id} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                          <div className="font-semibold text-slate-900">{window.location.origin}/portfolio/{link.token}</div>
-                          <div className="mt-1 text-slate-500">{link.is_active ? "Active" : "Inactive"}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">No share links yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="shell-panel p-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">Portfolio management</p>
-                  <h2 className="shell-title mt-2 text-2xl font-bold text-slate-900">Add and curate work samples</h2>
-                  <form className="mt-5 space-y-4" onSubmit={addPortfolioItem}>
-                    <label className="block text-sm font-medium text-slate-700">
-                      Project title
-                      <input
-                        value={portfolioForm.title}
-                        onChange={(event) => setPortfolioForm((prev) => ({ ...prev, title: event.target.value }))}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold"
-                      />
-                    </label>
-                    <label className="block text-sm font-medium text-slate-700">
-                      Description
-                      <textarea
-                        rows="3"
-                        value={portfolioForm.description}
-                        onChange={(event) => setPortfolioForm((prev) => ({ ...prev, description: event.target.value }))}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold"
-                      />
-                    </label>
-                    <label className="block text-sm font-medium text-slate-700">
-                      Image
-                      <input
-                        id="portfolio-image-input"
-                        type="file"
-                        accept="image/*"
-                        className="mt-2 w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm"
-                      />
-                    </label>
-                    <button type="submit" className="rounded-2xl bg-workie-blue px-4 py-3 text-sm font-semibold text-white">
-                      Add portfolio item
-                    </button>
-                    {portfolioMessage ? <div className="text-sm text-emerald-700">{portfolioMessage}</div> : null}
-                  </form>
-                  <div className="mt-5 space-y-3">
-                    {portfolioItems.length ? (
-                      portfolioItems.map((item) => (
-                        <div key={item.id} className="rounded-2xl border border-slate-200 p-3">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex gap-3">
-                              {item.image ? (
-                                <img src={item.image} alt={item.title || "Portfolio item"} className="h-16 w-16 rounded-2xl object-cover" />
-                              ) : null}
-                              <div>
-                                <div className="font-semibold text-slate-900">{item.title || "Portfolio item"}</div>
-                                <div className="mt-1 text-sm text-slate-500">{item.description}</div>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removePortfolioItem(item.id)}
-                              className="text-sm font-semibold text-rose-600"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">No portfolio items yet.</p>
-                    )}
-                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">Portfolio workspace</p>
+                  <h2 className="shell-title mt-2 text-2xl font-bold text-slate-900">Manage work samples and share links</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    Portfolio items, multiple images, ordering, previews, and client-shareable links now live in one dedicated workspace.
+                  </p>
+                  <Link to="/dashboard/portfolio" className="mt-5 inline-flex rounded-full bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">
+                    Open portfolio workspace
+                  </Link>
                 </div>
 
                 <div className="shell-panel p-6">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">Payout setup</p>
-                  <h2 className="shell-title mt-2 text-2xl font-bold text-slate-900">Verify Nigerian bank details</h2>
-                  <form className="mt-5 space-y-4" onSubmit={verifyBankAccount}>
-                    <label className="block text-sm font-medium text-slate-700">
-                      Bank
-                      <select
-                        value={bankForm.bank_code}
-                        onChange={(event) => {
-                          const selectedBank = banks.find((bank) => String(bank.code) === event.target.value);
-                          setBankForm((prev) => ({
-                            ...prev,
-                            bank_code: event.target.value,
-                            bank_name: selectedBank?.name || "",
-                          }));
-                        }}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold"
-                      >
-                        <option value="">Select your bank</option>
-                        {banks.map((bank) => (
-                          <option key={bank.code} value={bank.code}>
-                            {bank.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="block text-sm font-medium text-slate-700">
-                      Account number
-                      <input
-                        value={bankForm.account_number}
-                        onChange={(event) => setBankForm((prev) => ({ ...prev, account_number: event.target.value }))}
-                        className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold"
-                      />
-                    </label>
-                    <button type="submit" className="rounded-2xl bg-workie-gold px-4 py-3 text-sm font-semibold text-white">
-                      Submit for verification
-                    </button>
-                    {bankDirectoryMessage ? <div className="text-sm text-amber-700">{bankDirectoryMessage}</div> : null}
-                    {bankMessage ? <div className="text-sm text-emerald-700">{bankMessage}</div> : null}
-                  </form>
-                  <div className="mt-5 space-y-3">
-                    {bankAccounts.length ? (
-                      bankAccounts.map((account) => (
-                        <div key={account.id} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
-                          <div className="font-semibold text-slate-900">
-                            {account.bank_name || account.bank_code} - {account.account_number}
-                          </div>
-                          <div className="mt-1 text-slate-500">
-                            {account.account_name || "Awaiting verification"} - {account.status}
-                          </div>
+                  <h2 className="shell-title mt-2 text-2xl font-bold text-slate-900">Nigerian bank details</h2>
+
+                  {verifiedBankAccount && !isChangingBankAccount ? (
+                    <div className="mt-5 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                            Verified
+                          </span>
+                          <h3 className="mt-4 text-lg font-bold text-slate-900">
+                            {verifiedBankAccount.account_name || "Verified account"}
+                          </h3>
+                          <p className="mt-1 text-sm text-slate-600">
+                            {verifiedBankAccount.bank_name || verifiedBankAccount.bank_code}
+                          </p>
+                          <p className="mt-1 font-mono text-sm font-semibold text-slate-900">
+                            {verifiedBankAccount.account_number}
+                          </p>
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">No bank accounts submitted yet.</p>
-                    )}
-                  </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsChangingBankAccount(true);
+                            setBankMessage("");
+                          }}
+                          className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm"
+                        >
+                          Change account
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {shouldShowBankForm ? (
+                    <form className="mt-5 space-y-4" onSubmit={verifyBankAccount}>
+                      {verifiedBankAccount ? (
+                        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                          Add and verify a new payout account to replace the current verified account.
+                        </div>
+                      ) : null}
+                      <label className="block text-sm font-medium text-slate-700">
+                        Bank
+                        <select
+                          value={bankForm.bank_code}
+                          disabled={bankVerifying}
+                          onChange={(event) => {
+                            const selectedBank = banks.find((bank) => String(bank.code) === event.target.value);
+                            setBankForm((prev) => ({
+                              ...prev,
+                              bank_code: event.target.value,
+                              bank_name: selectedBank?.name || "",
+                            }));
+                          }}
+                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <option value="">Select your bank</option>
+                          {banks.map((bank) => (
+                            <option key={bank.code} value={bank.code}>
+                              {bank.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block text-sm font-medium text-slate-700">
+                        Account number
+                        <input
+                          value={bankForm.account_number}
+                          disabled={bankVerifying}
+                          onChange={(event) => setBankForm((prev) => ({ ...prev, account_number: event.target.value }))}
+                          className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-workie-gold disabled:cursor-not-allowed disabled:opacity-60"
+                        />
+                      </label>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="submit"
+                          disabled={bankVerifying}
+                          className="inline-flex items-center gap-2 rounded-2xl bg-workie-gold px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {bankVerifying ? (
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          ) : null}
+                          {bankVerifying ? "Verifying..." : "Submit for verification"}
+                        </button>
+                        {verifiedBankAccount ? (
+                          <button
+                            type="button"
+                            disabled={bankVerifying}
+                            onClick={() => {
+                              setIsChangingBankAccount(false);
+                              setBankForm({ bank_code: "", bank_name: "", account_number: "" });
+                              setBankMessage("");
+                            }}
+                            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Cancel
+                          </button>
+                        ) : null}
+                      </div>
+                      {bankDirectoryMessage ? <div className="text-sm text-amber-700">{bankDirectoryMessage}</div> : null}
+                      {bankMessage ? <div className="text-sm text-emerald-700">{bankMessage}</div> : null}
+                    </form>
+                  ) : bankMessage ? (
+                    <div className="mt-4 text-sm text-emerald-700">{bankMessage}</div>
+                  ) : null}
                 </div>
               </>
             ) : null}
           </div>
-        </form>
+        </div>
+        )}
       </div>
     </div>
   );

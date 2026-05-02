@@ -30,10 +30,10 @@ const ResetPasswordConfirm = () => {
 
   if (success) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <p className="text-green-500 text-center mt-4">Password reset successfully!</p>
-          <Link to="/login" className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+      <div className="flex min-h-screen items-center justify-center px-4 pt-28">
+        <div className="shell-card w-full max-w-md p-8 text-center">
+          <p className="text-emerald-600 text-center mt-4">Password reset successfully!</p>
+          <Link to="/login" className="mt-5 inline-block font-bold text-sm text-workie-blue">
             Back to Login
           </Link>
         </div>
@@ -42,18 +42,18 @@ const ResetPasswordConfirm = () => {
   }
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h2 className="block text-gray-700 text-center text-2xl font-bold mb-4">
+    <div className="flex min-h-screen items-center justify-center px-4 pt-28">
+      <div className="shell-card w-full max-w-md p-8">
+        <h2 className="shell-title block text-slate-900 text-center text-3xl font-bold mb-4">
           Reset Password Confirmation
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="newPassword">
+            <label className="block text-slate-700 text-sm font-semibold mb-2" htmlFor="newPassword">
               New Password
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none focus:border-workie-gold"
               id="newPassword"
               type="password"
               placeholder="New Password"
@@ -62,11 +62,11 @@ const ResetPasswordConfirm = () => {
             />
           </div>
           <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="reNewPassword">
+            <label className="block text-slate-700 text-sm font-semibold mb-2" htmlFor="reNewPassword">
               Confirm New Password
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none focus:border-workie-gold"
               id="reNewPassword"
               type="password"
               placeholder="Confirm New Password"
@@ -75,13 +75,13 @@ const ResetPasswordConfirm = () => {
             />
           </div>
           {error && (
-            <div className="text-red-500 text-center mt-4">
+            <div className="text-rose-600 text-center mt-4">
               {error}
             </div>
           )}
           <div className="flex items-center justify-between">
             <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="rounded-2xl bg-workie-gold px-4 py-3 font-semibold text-white"
               type="submit"
               disabled={loading}
             >
