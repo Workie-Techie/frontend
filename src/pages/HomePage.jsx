@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useEffect } from "react";
+import { HiOutlineChatBubbleLeftRight, HiOutlineShieldCheck, HiOutlineSparkles } from "react-icons/hi2";
 import { Link } from "react-router-dom";
 
 import profileService from "../services/profileService";
@@ -47,14 +48,17 @@ const sectionCards = [
   {
     title: "Vetted intake and matching",
     text: "Service categories, specializations, and intake questions help WorkieTechie understand the work before matching clients with professionals.",
+    icon: HiOutlineShieldCheck,
   },
   {
     title: "Quality-first talent visibility",
     text: "Professional portfolios can be reviewed through controlled visibility, so clients see relevant proof without turning the platform into a noisy directory.",
+    icon: HiOutlineSparkles,
   },
   {
     title: "Accountable communication",
     text: "Threaded messages, status history, approvals, and dispute paths keep expectations clear from request to completion.",
+    icon: HiOutlineChatBubbleLeftRight,
   },
 ];
 
@@ -146,7 +150,9 @@ const HomePage = () => {
           <section id="professionals" className="scroll-mt-28 grid gap-6 lg:grid-cols-3">
             {sectionCards.map((card) => (
               <article key={card.title} className="shell-panel p-5 sm:p-6">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-workie-gold sm:text-xs sm:tracking-[0.2em]">Foundation</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-workie-gold/15 text-workie-gold ring-1 ring-workie-gold/20">
+                  <card.icon className="h-6 w-6" aria-hidden="true" />
+                </div>
                 <h2 className="shell-title mt-3 text-[1.35rem] font-bold leading-tight text-slate-900 sm:text-2xl">{card.title}</h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600 sm:mt-4">{card.text}</p>
               </article>

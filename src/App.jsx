@@ -3,8 +3,10 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import Login from "./components/auth/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import StaffProtectedRoute from "./components/auth/StaffProtectedRoute";
 import Register from "./components/auth/Register";
 import Dashboard from "./components/dashboard/Dashboard";
+import StaffConsole from "./components/staff/StaffConsole";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import ResetPasswordConfirm from "./components/auth/ResetPasswordConfirm";
 import ActivateAccountPage from "./pages/ActivateAccountPage";
@@ -46,6 +48,9 @@ function App() {
         <Route path="/profile" element={<EditProfile />} />
         <Route path="/client-request" element={<ClientRequestPage />} />
         <Route path="/client-request/:requestId" element={<ClientRequestDetailPage />} />
+      </Route>
+      <Route element={<StaffProtectedRoute />}>
+        <Route path="/staff/*" element={<StaffConsole />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

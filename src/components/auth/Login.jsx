@@ -12,9 +12,9 @@ const Login = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const success = await login(email, password);
-    if (success) {
-      navigate("/dashboard");
+    const result = await login(email, password);
+    if (result) {
+      navigate(result?.is_staff || result?.is_superuser ? "/staff" : "/dashboard");
     }
   };
 

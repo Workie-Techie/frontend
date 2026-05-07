@@ -70,8 +70,8 @@ export const useAuth = () => {
       const tokens = await authService.login(email, password);
       dispatch(setToken(tokens.access));
       dispatch(setRefreshToken(tokens.refresh));
-      await bootstrapAuth({ tokenOverride: tokens.access, force: true });
-      return true;
+      const bootstrapped = await bootstrapAuth({ tokenOverride: tokens.access, force: true });
+      return bootstrapped?.user || true;
     } catch (error) {
       dispatch(setError(error.response?.data?.detail || "Invalid credentials."));
       return false;
