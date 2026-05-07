@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { RecoilRoot, useRecoilState, useSetRecoilState } from 'recoil';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 import { tokenState, refreshTokenState, userState, authLoadingState, authErrorState, setAuthHeader } from './authState';
 
 // Initialize API settings
-const API_URL = 'http://localhost:8000';
 axios.defaults.baseURL = API_URL;
 
 // Inner component to perform initialization
