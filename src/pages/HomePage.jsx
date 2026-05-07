@@ -82,12 +82,12 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen">
-      <main className="px-4 pb-14 pt-28 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl space-y-8">
-          <section id="clients" className="shell-card scroll-mt-28 overflow-hidden p-8 sm:p-10 lg:p-12">
-            <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-              <div>
-                <div className="inline-flex rounded-full bg-slate-100 p-1">
+      <main className="px-3 pb-12 pt-24 sm:px-6 sm:pt-28 lg:px-8">
+        <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8">
+          <section id="clients" className="shell-card scroll-mt-28 overflow-hidden p-4 sm:p-8 lg:p-12">
+            <div className="grid gap-6 sm:gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              <div className="min-w-0">
+                <div className="grid w-full grid-cols-2 rounded-full bg-slate-100 p-1 sm:inline-flex sm:w-auto">
                   {[
                     { id: "clients", label: "Clients" },
                     { id: "professionals", label: "Professionals" },
@@ -96,7 +96,7 @@ const HomePage = () => {
                       key={tab.id}
                       type="button"
                       onClick={() => setAudience(tab.id)}
-                      className={`rounded-full px-5 py-3 text-sm font-semibold transition ${
+                      className={`rounded-full px-3 py-2.5 text-xs font-semibold transition sm:px-5 sm:py-3 sm:text-sm ${
                         audience === tab.id
                           ? "bg-workie-blue text-white shadow-lg"
                           : "text-slate-600 hover:text-workie-blue"
@@ -107,36 +107,36 @@ const HomePage = () => {
                   ))}
                 </div>
 
-                <p className="mt-8 text-xs font-semibold uppercase tracking-[0.25em] text-workie-gold">
+                <p className="mt-6 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-workie-gold sm:mt-8 sm:text-xs sm:tracking-[0.25em]">
                   {content.eyebrow}
                 </p>
-                <h1 className="shell-title mt-4 max-w-3xl text-5xl font-bold leading-[1.02] text-slate-950 sm:text-6xl">
+                <h1 className="shell-title mt-3 max-w-3xl break-words text-[2.35rem] font-bold leading-[1.04] text-slate-950 min-[390px]:text-[2.65rem] sm:mt-4 sm:text-6xl sm:leading-[1.02]">
                   {heroTitle}
                 </h1>
-                <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+                <p className="mt-4 max-w-2xl text-[0.95rem] leading-7 text-slate-600 sm:mt-6 sm:text-lg sm:leading-8">
                   {heroBody}
                 </p>
 
-                <div className="mt-8 flex flex-wrap gap-3">
-                  <Link to={content.ctaPrimary.to} className="rounded-full bg-workie-gold px-5 py-3.5 text-sm font-semibold text-white shadow-lg">
+                <div className="mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-wrap">
+                  <Link to={content.ctaPrimary.to} className="rounded-full bg-workie-gold px-5 py-3.5 text-center text-sm font-semibold text-white shadow-lg">
                     {content.ctaPrimary.label}
                   </Link>
-                  <Link to={content.ctaSecondary.to} className="rounded-full border border-slate-200 px-5 py-3.5 text-sm font-semibold text-slate-700">
+                  <Link to={content.ctaSecondary.to} className="rounded-full border border-slate-200 px-5 py-3.5 text-center text-sm font-semibold text-slate-700">
                     {content.ctaSecondary.label}
                   </Link>
                 </div>
               </div>
 
-              <div className="rounded-[30px] bg-gradient-to-br from-[#12354b] via-workie-blue to-workie-blue-light p-8 text-white shadow-[0_30px_100px_rgba(21,75,108,0.25)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-200">Why this flow works</p>
-                <div className="mt-6 space-y-4">
+              <div className="min-w-0 rounded-[24px] bg-gradient-to-br from-[#12354b] via-workie-blue to-workie-blue-light p-4 text-white shadow-[0_30px_100px_rgba(21,75,108,0.25)] sm:rounded-[30px] sm:p-8">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-200 sm:text-xs sm:tracking-[0.25em]">Why this flow works</p>
+                <div className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
                   {content.pillars.map((pillar) => (
-                    <div key={pillar} className="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm leading-6 text-slate-100 backdrop-blur">
+                    <div key={pillar} className="break-words rounded-2xl border border-white/10 bg-white/10 p-3 text-[0.86rem] leading-6 text-slate-100 backdrop-blur sm:rounded-3xl sm:p-4 sm:text-sm">
                       {pillar}
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 rounded-3xl border border-white/10 bg-black/10 p-5 text-sm leading-6 text-slate-100">
+                <div className="mt-4 break-words rounded-2xl border border-white/10 bg-black/10 p-4 text-[0.86rem] leading-6 text-slate-100 sm:mt-6 sm:rounded-3xl sm:p-5 sm:text-sm">
                   {proofBody}
                 </div>
               </div>
@@ -145,22 +145,22 @@ const HomePage = () => {
 
           <section id="professionals" className="scroll-mt-28 grid gap-6 lg:grid-cols-3">
             {sectionCards.map((card) => (
-              <article key={card.title} className="shell-panel p-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-gold">Foundation</p>
-                <h2 className="shell-title mt-3 text-2xl font-bold text-slate-900">{card.title}</h2>
-                <p className="mt-4 text-sm leading-7 text-slate-600">{card.text}</p>
+              <article key={card.title} className="shell-panel p-5 sm:p-6">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-workie-gold sm:text-xs sm:tracking-[0.2em]">Foundation</p>
+                <h2 className="shell-title mt-3 text-[1.35rem] font-bold leading-tight text-slate-900 sm:text-2xl">{card.title}</h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600 sm:mt-4">{card.text}</p>
               </article>
             ))}
           </section>
 
           <section id="how-it-works" className="scroll-mt-28 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="shell-panel p-6 sm:p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-workie-blue">How it works</p>
-              <h2 className="shell-title mt-2 text-3xl font-bold text-slate-900">A guided matching process, not a crowded marketplace.</h2>
-              <div className="mt-6 space-y-4">
+            <div className="shell-panel p-5 sm:p-8">
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-workie-blue sm:text-xs sm:tracking-[0.2em]">How it works</p>
+              <h2 className="shell-title mt-2 text-[1.8rem] font-bold leading-tight text-slate-900 sm:text-3xl">A guided matching process, not a crowded marketplace.</h2>
+              <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
                 {content.process.map((step, index) => (
-                  <div key={step} className="flex gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-workie-blue text-sm font-bold text-white">
+                  <div key={step} className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:gap-4 sm:rounded-3xl sm:p-4">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-workie-blue text-sm font-bold text-white sm:h-10 sm:w-10">
                       {index + 1}
                     </div>
                     <p className="text-sm leading-6 text-slate-600">{step}</p>
@@ -169,19 +169,19 @@ const HomePage = () => {
               </div>
             </div>
 
-            <div id="trust" className="shell-card scroll-mt-28 bg-gradient-to-br from-workie-gold via-[#f0b548] to-[#f7cf88] p-8 text-[#183b56] sm:p-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em]">Built for trust on both sides</p>
-              <h2 className="shell-title mt-3 text-4xl font-bold leading-tight">
+            <div id="trust" className="shell-card scroll-mt-28 bg-gradient-to-br from-workie-gold via-[#f0b548] to-[#f7cf88] p-5 text-[#183b56] sm:p-10">
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] sm:text-xs sm:tracking-[0.25em]">Built for trust on both sides</p>
+              <h2 className="shell-title mt-3 break-words text-[2rem] font-bold leading-tight sm:text-4xl">
                 Better matches, clearer expectations, and work both sides can stand behind.
               </h2>
-              <p className="mt-5 max-w-2xl text-sm leading-7">
+              <p className="mt-4 max-w-2xl text-sm leading-7 sm:mt-5">
                 Clients get a calmer way to find dependable professionals. Professionals get a better way to be considered for work that fits their strengths. Everyone gets clearer communication, visible progress, and a process built around satisfaction before, during, and after delivery.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link to="/register" className="rounded-full bg-workie-blue px-5 py-3 text-sm font-semibold text-white">
+              <div className="mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-wrap">
+                <Link to="/register" className="rounded-full bg-workie-blue px-5 py-3 text-center text-sm font-semibold text-white">
                   Start now
                 </Link>
-                <Link to="/login" className="rounded-full border border-[#183b56]/20 px-5 py-3 text-sm font-semibold text-[#183b56]">
+                <Link to="/login" className="rounded-full border border-[#183b56]/20 px-5 py-3 text-center text-sm font-semibold text-[#183b56]">
                   Return to your account
                 </Link>
               </div>
