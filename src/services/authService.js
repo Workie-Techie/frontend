@@ -25,6 +25,57 @@ if (storedToken) {
   setAuthToken(storedToken);
 }
 
+let refreshPromise = null;
+
+const emitAuthEvent = (name, detail = {}) => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+};
+
+const clearStoredAuth = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  setAuthToken(null);
+  emitAuthEvent("workietechie:auth-cleared");
+};
+
+privateApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const isUnauthorized = error.response?.status === 401;
+    const refresh = localStorage.getItem("refreshToken");
+
+    if (!isUnauthorized || originalRequest?._retry || !refresh) {
+      if (isUnauthorized && !refresh) clearStoredAuth();
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+    try {
+      refreshPromise =
+        refreshPromise ||
+        publicApi.post("/auth/jwt/refresh/", { refresh }).finally(() => {
+          refreshPromise = null;
+        });
+      const response = await refreshPromise;
+      const access = response.data.access;
+      localStorage.setItem("token", access);
+      setAuthToken(access);
+      emitAuthEvent("workietechie:token-refreshed", { access });
+      originalRequest.headers = {
+        ...(originalRequest.headers || {}),
+        Authorization: `JWT ${access}`,
+      };
+      return privateApi(originalRequest);
+    } catch (refreshError) {
+      clearStoredAuth();
+      return Promise.reject(refreshError);
+    }
+  }
+);
+
 const authService = {
   login: async (email, password) => {
     const response = await publicApi.post("/auth/jwt/create/", { email, password });
@@ -50,6 +101,7 @@ const authService = {
     const response = await publicApi.post("/auth/jwt/refresh/", { refresh });
     localStorage.setItem("token", response.data.access);
     setAuthToken(response.data.access);
+    emitAuthEvent("workietechie:token-refreshed", { access: response.data.access });
     return response.data.access;
   },
 
@@ -74,9 +126,7 @@ const authService = {
   },
 
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    setAuthToken(null);
+    clearStoredAuth();
   },
 };
 

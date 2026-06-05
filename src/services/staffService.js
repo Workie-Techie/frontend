@@ -28,7 +28,21 @@ const staffService = {
   updateAssignmentStatus: async (id, payload) => (await privateApi.post(`/api/staff/assignments/${id}/status/`, payload)).data,
 
   getThreads: async (params = {}) => unwrapList((await privateApi.get("/api/staff/threads/", { params })).data),
-  replyThread: async (id, body) => (await privateApi.post(`/api/staff/threads/${id}/reply/`, { body })).data,
+  replyThread: async (id, payload) => {
+    const hasFile = payload?.attachment instanceof File;
+    const body = typeof payload === "string" ? payload : payload?.body || "";
+    const data = hasFile ? new FormData() : { body };
+    if (hasFile) {
+      data.append("body", body);
+      if (payload.link_url) data.append("link_url", payload.link_url);
+      data.append("attachment", payload.attachment);
+    } else if (typeof payload === "object" && payload) {
+      data.link_url = payload.link_url || "";
+      if (payload.attachment_asset_id) data.attachment_asset_id = payload.attachment_asset_id;
+    }
+    return (await privateApi.post(`/api/staff/threads/${id}/reply/`, data)).data;
+  },
+  markThreadRead: async (id) => (await privateApi.post(`/api/staff/threads/${id}/mark_read/`)).data,
   closeThread: async (id) => (await privateApi.post(`/api/staff/threads/${id}/close/`)).data,
   reopenThread: async (id) => (await privateApi.post(`/api/staff/threads/${id}/reopen/`)).data,
 
@@ -69,6 +83,7 @@ const staffService = {
   getDisputes: async () => unwrapList((await privateApi.get("/api/staff/disputes/")).data),
   updateDispute: async (id, payload) => (await privateApi.patch(`/api/staff/disputes/${id}/`, payload)).data,
   getSubmissions: async () => unwrapList((await privateApi.get("/api/staff/submissions/")).data),
+  reviewSubmission: async (id, payload) => (await privateApi.post(`/api/staff/submissions/${id}/review/`, payload)).data,
   getPortfolioItems: async () => unwrapList((await privateApi.get("/api/staff/portfolio-items/")).data),
   updatePortfolioItem: async (id, payload) => (await privateApi.patch(`/api/staff/portfolio-items/${id}/`, payload)).data,
 };

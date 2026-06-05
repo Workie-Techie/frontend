@@ -15,11 +15,19 @@ const authSlice = createSlice({
   reducers: {
     setToken: (state, action) => {
       state.token = action.payload;
-      localStorage.setItem('token', action.payload || '');
+      if (action.payload) {
+        localStorage.setItem('token', action.payload);
+      } else {
+        localStorage.removeItem('token');
+      }
     },
     setRefreshToken: (state, action) => {
       state.refreshToken = action.payload;
-      localStorage.setItem('refreshToken', action.payload || '');
+      if (action.payload) {
+        localStorage.setItem('refreshToken', action.payload);
+      } else {
+        localStorage.removeItem('refreshToken');
+      }
     },
     setUser: (state, action) => {
       state.user = action.payload;

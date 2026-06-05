@@ -1,14 +1,11 @@
-import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-// import { authLoadingState } from '../../store/authState';
+
+import useAuth from '../../hooks/useAuth';
 
 const ProtectedRoute = () => {
-  const isLoading = useSelector((state) => state.auth.loading);
-  const isAuthenticated = useSelector((state) => state.auth.token);
+  const { token, user, loading } = useAuth();
   
-  // If still loading, show loading indicator
-  if (isLoading) {
+  if (loading || (token && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
@@ -16,12 +13,14 @@ const ProtectedRoute = () => {
     );
   }
 
-  // If not authenticated, redirect to login
-  if (!isAuthenticated) {
+  if (!token) {
     return <Navigate to="/login" replace />;
   }
+
+  if (user?.is_staff || user?.is_superuser) {
+    return <Navigate to="/staff" replace />;
+  }
   
-  // If authenticated, render the child routes
   return <Outlet />;
 };
 

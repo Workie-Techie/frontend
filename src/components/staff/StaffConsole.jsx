@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import logoImage from "../../assets/logo2.png";
@@ -79,6 +79,17 @@ const statusClasses = {
 
 const pretty = (value) => value?.replaceAll("_", " ") || "pending";
 
+const formatActionError = (error) => {
+  const data = error?.response?.data;
+  if (typeof data === "string") return data;
+  if (data?.detail) return data.detail;
+  if (data && typeof data === "object") {
+    const firstError = Object.values(data).flat().filter(Boolean)[0];
+    if (firstError) return String(firstError);
+  }
+  return error?.message || "Something went wrong. Please try again.";
+};
+
 const StatusPill = ({ status }) => (
   <span className={`status-pill capitalize ${statusClasses[status] || "bg-slate-100 text-slate-700"}`}>{pretty(status)}</span>
 );
@@ -125,6 +136,9 @@ const StaffConsole = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [actionBusy, setActionBusy] = useState(false);
+  const actionBusyRef = useRef(false);
   const [overview, setOverview] = useState(null);
   const [requests, setRequests] = useState([]);
   const [profiles, setProfiles] = useState([]);
@@ -148,6 +162,9 @@ const StaffConsole = () => {
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [selectedThread, setSelectedThread] = useState(null);
   const [replyDraft, setReplyDraft] = useState("");
+  const [replyLink, setReplyLink] = useState("");
+  const [replyFile, setReplyFile] = useState(null);
+  const [submissionReviewNotes, setSubmissionReviewNotes] = useState({});
   const [actionNotes, setActionNotes] = useState("");
   const [matchingForm, setMatchingForm] = useState({ client_request: "", professional: "", offer_message: "", due_date: "" });
   const [payoutForm, setPayoutForm] = useState({ assignment: "", bank_account: "", amount: "", reference: "", notes: "" });
@@ -161,6 +178,10 @@ const StaffConsole = () => {
   const professionals = useMemo(() => profiles.filter((profile) => profile.user?.is_freelancer), [profiles]);
   const pendingPayments = payments.filter((payment) => payment.status === "pending");
   const pendingRequests = requests.filter((item) => ["intake", "review", "awaiting_payment"].includes(item.status));
+  const selectedPayoutAssignment = useMemo(
+    () => assignments.find((assignment) => String(assignment.id) === String(payoutForm.assignment)),
+    [assignments, payoutForm.assignment],
+  );
 
   const loadAll = async () => {
     setLoading(true);
@@ -235,10 +256,38 @@ const StaffConsole = () => {
   }, []);
 
   const runAction = async (fn, success = "Updated successfully.") => {
+    if (actionBusyRef.current) return;
+    actionBusyRef.current = true;
+    setActionBusy(true);
     setMessage("");
-    await fn();
-    setMessage(success);
-    await loadAll();
+    try {
+      await fn();
+      setMessageType("success");
+      setMessage(success);
+      await loadAll();
+    } catch (error) {
+      setMessageType("error");
+      setMessage(formatActionError(error));
+    } finally {
+      actionBusyRef.current = false;
+      setActionBusy(false);
+    }
+  };
+
+  const reviewSubmissionWithNote = async (item, status, fallbackNote) => {
+    const reviewNote = (submissionReviewNotes[item.id] || "").trim() || fallbackNote;
+    await staffService.reviewSubmission(item.id, { status, review_note: reviewNote });
+    setSubmissionReviewNotes((current) => ({ ...current, [item.id]: "" }));
+  };
+
+  const handleSelectThread = async (thread) => {
+    if (thread.staff_unread_count) {
+      const updated = await staffService.markThreadRead(thread.id);
+      setSelectedThread(updated);
+      setThreads((prev) => prev.map((item) => (item.id === thread.id ? { ...item, staff_unread_count: 0 } : item)));
+      return;
+    }
+    setSelectedThread(thread);
   };
 
   const renderOverview = () => (
@@ -475,13 +524,13 @@ const StaffConsole = () => {
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <Panel className="max-h-[70vh] space-y-3 overflow-y-auto">
           {threads.map((thread) => (
-            <button key={thread.id} onClick={() => setSelectedThread(thread)} className={`w-full rounded-2xl border p-4 text-left ${selectedThread?.id === thread.id ? "border-workie-gold bg-amber-50" : "border-slate-200"}`}>
+            <button key={thread.id} onClick={() => handleSelectThread(thread)} className={`w-full rounded-2xl border p-4 text-left ${selectedThread?.id === thread.id ? "border-workie-gold bg-amber-50" : "border-slate-200"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-bold text-slate-900">{thread.subject}</p>
                   <p className="mt-1 text-xs text-slate-500">{thread.user?.email} • {pretty(thread.thread_type)}</p>
                 </div>
-                {thread.unread_count ? <span className="rounded-full bg-workie-blue px-2 py-1 text-xs font-bold !text-white">{thread.unread_count}</span> : null}
+                {thread.staff_unread_count ? <span className="rounded-full bg-workie-blue px-2 py-1 text-xs font-bold !text-white">{thread.staff_unread_count}</span> : null}
               </div>
               <p className="mt-2 line-clamp-2 text-sm text-slate-500">{thread.last_message_preview}</p>
             </button>
@@ -503,12 +552,44 @@ const StaffConsole = () => {
                 {(selectedThread.messages || []).map((message) => (
                   <div key={message.id} className={`rounded-2xl p-3 text-sm ${message.sender_name === "WorkieTechie Staff" ? "bg-workie-blue !text-white" : "bg-white text-slate-700"}`}>
                     <p className="text-xs font-semibold opacity-75">{message.sender_name}</p>
-                    <p className="mt-1 leading-6">{message.body}</p>
+                    {message.body ? <p className="mt-1 leading-6">{message.body}</p> : null}
+                    {message.link_url ? (
+                      <a href={message.link_url} target="_blank" rel="noreferrer" className={`mt-2 inline-flex font-semibold ${message.sender_name === "WorkieTechie Staff" ? "!text-white underline decoration-white/50" : "text-workie-blue"}`}>
+                        Open shared link
+                      </a>
+                    ) : null}
+                    {message.attachment_url ? (
+                      <a href={message.attachment_url} target="_blank" rel="noreferrer" className={`mt-2 block rounded-2xl border px-3 py-2 text-xs font-semibold ${message.sender_name === "WorkieTechie Staff" ? "border-white/20 bg-white/10 !text-white" : "border-slate-200 bg-white text-slate-700"}`}>
+                        View attachment{message.attachment?.original_name ? `: ${message.attachment.original_name}` : ""}
+                      </a>
+                    ) : null}
                   </div>
                 ))}
               </div>
               <TextArea label="Reply" rows="4" value={replyDraft} onChange={(event) => setReplyDraft(event.target.value)} className="mt-5" />
-              <button onClick={() => runAction(async () => { const updated = await staffService.replyThread(selectedThread.id, replyDraft); setSelectedThread(updated); setReplyDraft(""); }, "Reply sent.")} className="mt-3 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Send reply</button>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <TextInput label="Optional link" value={replyLink} onChange={(event) => setReplyLink(event.target.value)} />
+                <label className="block text-sm font-semibold text-slate-700">
+                  Attachment
+                  <span className="mt-2 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-normal text-slate-600 transition hover:border-workie-gold">
+                    <span className="truncate">{replyFile?.name || "Attach a file"}</span>
+                    <input type="file" className="hidden" onChange={(event) => setReplyFile(event.target.files?.[0] || null)} />
+                  </span>
+                </label>
+              </div>
+              <button
+                disabled={!replyDraft.trim() && !replyLink.trim() && !replyFile}
+                onClick={() => runAction(async () => {
+                  const updated = await staffService.replyThread(selectedThread.id, { body: replyDraft.trim(), link_url: replyLink.trim(), attachment: replyFile });
+                  setSelectedThread(updated);
+                  setReplyDraft("");
+                  setReplyLink("");
+                  setReplyFile(null);
+                }, "Reply sent.")}
+                className="mt-3 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Send reply
+              </button>
             </div>
           ) : <p className="text-sm text-slate-500">Select a conversation thread.</p>}
         </Panel>
@@ -547,16 +628,30 @@ const StaffConsole = () => {
       <PageTitle eyebrow="Finance" title="Payouts" body="Record manual professional payouts after approved completion." />
       <Panel>
         <div className="grid gap-4 lg:grid-cols-2">
-          <SelectInput label="Assignment" value={payoutForm.assignment} onChange={(event) => setPayoutForm((prev) => ({ ...prev, assignment: event.target.value }))}>
+          <SelectInput label="Assignment" value={payoutForm.assignment} onChange={(event) => setPayoutForm((prev) => ({ ...prev, assignment: event.target.value, bank_account: "" }))}>
             <option value="">Select assignment</option>
             {assignments.map((assignment) => <option key={assignment.id} value={assignment.id}>{assignment.client_request_title || assignment.client_request?.title} • {assignment.professional_name}</option>)}
           </SelectInput>
           <TextInput label="Amount" type="number" value={payoutForm.amount} onChange={(event) => setPayoutForm((prev) => ({ ...prev, amount: event.target.value }))} />
           <TextInput label="Reference" value={payoutForm.reference} onChange={(event) => setPayoutForm((prev) => ({ ...prev, reference: event.target.value }))} />
-          <TextInput label="Bank account ID" value={payoutForm.bank_account} onChange={(event) => setPayoutForm((prev) => ({ ...prev, bank_account: event.target.value }))} />
+          <SelectInput label="Verified payout account" value={payoutForm.bank_account} onChange={(event) => setPayoutForm((prev) => ({ ...prev, bank_account: event.target.value }))}>
+            <option value="">Select verified bank account</option>
+            {(selectedPayoutAssignment?.professional_bank_accounts || []).map((account) => (
+              <option key={account.id} value={account.id}>{account.bank_name || account.bank_code} • {account.account_number} • {account.account_name}</option>
+            ))}
+          </SelectInput>
+          {payoutForm.assignment && !(selectedPayoutAssignment?.professional_bank_accounts || []).length ? (
+            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">This professional has no verified bank account yet.</p>
+          ) : null}
           <TextArea label="Notes" rows="3" value={payoutForm.notes} onChange={(event) => setPayoutForm((prev) => ({ ...prev, notes: event.target.value }))} />
         </div>
-        <button onClick={() => runAction(async () => { await staffService.createPayout({ ...payoutForm, assignment: Number(payoutForm.assignment), bank_account: payoutForm.bank_account ? Number(payoutForm.bank_account) : null }); setPayoutForm({ assignment: "", bank_account: "", amount: "", reference: "", notes: "" }); }, "Payout recorded.")} className="mt-5 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Record payout</button>
+        <button
+          disabled={!payoutForm.assignment || !payoutForm.amount || !payoutForm.bank_account}
+          onClick={() => runAction(async () => { await staffService.createPayout({ ...payoutForm, assignment: Number(payoutForm.assignment), bank_account: Number(payoutForm.bank_account) }); setPayoutForm({ assignment: "", bank_account: "", amount: "", reference: "", notes: "" }); }, "Payout recorded.")}
+          className="mt-5 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Record payout
+        </button>
       </Panel>
       <div className="mt-5 grid gap-3">
         {payouts.map((payout) => <Panel key={payout.id}><p className="font-bold text-slate-900">{payout.assignment_title}</p><p className="mt-1 text-sm text-slate-500">{payout.professional_email} • {payout.amount} • {payout.reference || "No reference"}</p></Panel>)}
@@ -575,7 +670,18 @@ const StaffConsole = () => {
             <TextArea label="Description" rows="3" value={categoryForm.description} onChange={(event) => setCategoryForm((prev) => ({ ...prev, description: event.target.value }))} />
             <button onClick={() => runAction(async () => { await staffService.createCategory(categoryForm); setCategoryForm({ name: "", description: "" }); }, "Category created.")} className="rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Add category</button>
           </div>
-          <div className="mt-5 space-y-2">{categories.map((item) => <div key={item.id} className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-700">{item.name}</div>)}</div>
+          <div className="mt-5 space-y-3">
+            {categories.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
+                  <TextInput label="Category name" defaultValue={item.name} onBlur={(event) => event.target.value !== item.name && runAction(() => staffService.updateCategory(item.id, { name: event.target.value }), "Category updated.")} />
+                  <button onClick={() => runAction(() => staffService.updateCategory(item.id, { is_active: !item.is_active }), "Category visibility updated.")} className={`mt-7 rounded-full px-3 py-2 text-xs font-semibold ${item.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{item.is_active ? "Active" : "Inactive"}</button>
+                </div>
+                <TextArea label="Description" rows="2" defaultValue={item.description || ""} onBlur={(event) => event.target.value !== (item.description || "") && runAction(() => staffService.updateCategory(item.id, { description: event.target.value }), "Category updated.")} className="mt-3" />
+                <TextInput label="Display order" type="number" defaultValue={item.sort_order || 0} onBlur={(event) => Number(event.target.value) !== (item.sort_order || 0) && runAction(() => staffService.updateCategory(item.id, { sort_order: Number(event.target.value) || 0 }), "Category order updated.")} className="mt-3 max-w-40" />
+              </div>
+            ))}
+          </div>
         </Panel>
         <Panel>
           <h2 className="shell-title text-2xl font-bold text-slate-900">Specializations</h2>
@@ -587,6 +693,18 @@ const StaffConsole = () => {
             <TextInput label="Name" value={specializationForm.name} onChange={(event) => setSpecializationForm((prev) => ({ ...prev, name: event.target.value }))} />
             <TextArea label="Description" rows="3" value={specializationForm.description} onChange={(event) => setSpecializationForm((prev) => ({ ...prev, description: event.target.value }))} />
             <button onClick={() => runAction(async () => { await staffService.createSpecialization({ ...specializationForm, category: Number(specializationForm.category) }); setSpecializationForm({ category: "", name: "", description: "" }); }, "Specialization created.")} className="rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Add specialization</button>
+          </div>
+          <div className="mt-5 space-y-3">
+            {specializations.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-start">
+                  <TextInput label={`Name under ${item.category_name || "category"}`} defaultValue={item.name} onBlur={(event) => event.target.value !== item.name && runAction(() => staffService.updateSpecialization(item.id, { name: event.target.value }), "Specialization updated.")} />
+                  <button onClick={() => runAction(() => staffService.updateSpecialization(item.id, { is_active: !item.is_active }), "Specialization visibility updated.")} className={`mt-7 rounded-full px-3 py-2 text-xs font-semibold ${item.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{item.is_active ? "Active" : "Inactive"}</button>
+                </div>
+                <TextArea label="Description" rows="2" defaultValue={item.description || ""} onBlur={(event) => event.target.value !== (item.description || "") && runAction(() => staffService.updateSpecialization(item.id, { description: event.target.value }), "Specialization updated.")} className="mt-3" />
+                <TextInput label="Display order" type="number" defaultValue={item.sort_order || 0} onBlur={(event) => Number(event.target.value) !== (item.sort_order || 0) && runAction(() => staffService.updateSpecialization(item.id, { sort_order: Number(event.target.value) || 0 }), "Specialization order updated.")} className="mt-3 max-w-40" />
+              </div>
+            ))}
           </div>
         </Panel>
         <Panel>
@@ -601,7 +719,21 @@ const StaffConsole = () => {
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={questionSetForm.is_general} onChange={(event) => setQuestionSetForm((prev) => ({ ...prev, is_general: event.target.checked }))} /> General form</label>
             <button onClick={() => runAction(async () => { await staffService.createQuestionSet({ ...questionSetForm, category_id: questionSetForm.category_id ? Number(questionSetForm.category_id) : null }); setQuestionSetForm({ name: "", audience: "professional", is_general: false, category_id: "", description: "" }); }, "Question set created.")} className="rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Add question set</button>
           </div>
-          <div className="mt-5 space-y-2">{questionSets.slice(0, 8).map((item) => <div key={item.id} className="rounded-2xl bg-slate-50 p-3 text-sm font-semibold text-slate-700">{item.name} • {item.audience}</div>)}</div>
+          <div className="mt-5 space-y-3">
+            {questionSets.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-workie-blue">{pretty(item.audience)} {item.is_general ? "general" : "skill-specific"}</p>
+                    <p className="mt-1 text-xs text-slate-500">{item.question_count || 0} questions</p>
+                  </div>
+                  <button onClick={() => runAction(() => staffService.updateQuestionSet(item.id, { is_active: !item.is_active }), "Question set visibility updated.")} className={`rounded-full px-3 py-2 text-xs font-semibold ${item.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>{item.is_active ? "Active" : "Inactive"}</button>
+                </div>
+                <TextInput label="Form name" defaultValue={item.name} onBlur={(event) => event.target.value !== item.name && runAction(() => staffService.updateQuestionSet(item.id, { name: event.target.value }), "Question set updated.")} className="mt-3" />
+                <TextInput label="Display order" type="number" defaultValue={item.sort_order || 0} onBlur={(event) => Number(event.target.value) !== (item.sort_order || 0) && runAction(() => staffService.updateQuestionSet(item.id, { sort_order: Number(event.target.value) || 0 }), "Question set order updated.")} className="mt-3 max-w-40" />
+              </div>
+            ))}
+          </div>
         </Panel>
         <Panel>
           <h2 className="shell-title text-2xl font-bold text-slate-900">Questions shown to users</h2>
@@ -617,6 +749,23 @@ const StaffConsole = () => {
             <TextArea label="Choices, one per line" rows="3" value={questionForm.choices_text} onChange={(event) => setQuestionForm((prev) => ({ ...prev, choices_text: event.target.value }))} />
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={questionForm.is_required} onChange={(event) => setQuestionForm((prev) => ({ ...prev, is_required: event.target.checked }))} /> Required</label>
             <button onClick={() => runAction(async () => { await staffService.createQuestion({ ...questionForm, question_set: Number(questionForm.question_set) }); setQuestionForm({ question_set: "", text: "", question_type: "text", is_required: false, choices_text: "" }); }, "Question created.")} className="rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Add question</button>
+          </div>
+          <div className="mt-5 space-y-3">
+            {questions.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-3">
+                  <TextArea label="Question text" rows="2" defaultValue={item.text} onBlur={(event) => event.target.value !== item.text && runAction(() => staffService.updateQuestion(item.id, { text: event.target.value }), "Question updated.")} />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <SelectInput label="Type" defaultValue={item.question_type} onChange={(event) => runAction(() => staffService.updateQuestion(item.id, { question_type: event.target.value }), "Question type updated.")}>
+                      {["text", "long_text", "number", "select", "multi_select", "boolean", "url"].map((type) => <option key={type} value={type}>{pretty(type)}</option>)}
+                    </SelectInput>
+                    <TextInput label="Display order" type="number" defaultValue={item.sort_order || 0} onBlur={(event) => Number(event.target.value) !== (item.sort_order || 0) && runAction(() => staffService.updateQuestion(item.id, { sort_order: Number(event.target.value) || 0 }), "Question order updated.")} />
+                    <label className="mt-7 flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" defaultChecked={item.is_required} onChange={(event) => runAction(() => staffService.updateQuestion(item.id, { is_required: event.target.checked }), "Question requirement updated.")} /> Required</label>
+                  </div>
+                  <TextArea label="Choices, one per line" rows="2" defaultValue={item.choices_text || ""} onBlur={(event) => event.target.value !== (item.choices_text || "") && runAction(() => staffService.updateQuestion(item.id, { choices_text: event.target.value }), "Question choices updated.")} />
+                </div>
+              </div>
+            ))}
           </div>
         </Panel>
       </div>
@@ -693,6 +842,7 @@ const StaffConsole = () => {
                     const value = JSON.parse(event.target.value);
                     runAction(() => staffService.updateSetting(setting.id, { value }), "Setting updated.");
                   } catch {
+                    setMessageType("error");
                     setMessage("Invalid JSON. Setting was not saved.");
                   }
                 }} />
@@ -707,18 +857,50 @@ const StaffConsole = () => {
   const renderApprovals = () => (
     <>
       <PageTitle eyebrow="Quality control" title="Approvals & Disputes" body="Review submissions and resolve dispute/refund cases." />
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Panel>
-          <h2 className="shell-title text-2xl font-bold text-slate-900">Disputes</h2>
-          <div className="mt-4 space-y-3">{disputes.map((item) => <div key={item.id} className="rounded-2xl border border-slate-200 p-4"><p className="font-bold text-slate-900">{item.reason}</p><p className="mt-1 text-sm text-slate-500">{item.request_title}</p><StatusPill status={item.status} /></div>)}</div>
-        </Panel>
-        <Panel>
-          <h2 className="shell-title text-2xl font-bold text-slate-900">Submissions</h2>
-          <div className="mt-4 space-y-3">{submissions.map((item) => <div key={item.id} className="rounded-2xl border border-slate-200 p-4"><p className="font-bold text-slate-900">{item.assignment_title}</p><p className="mt-1 text-sm text-slate-500">{item.submitted_by_email}</p><p className="mt-2 text-sm text-slate-600">{item.note}</p></div>)}</div>
-        </Panel>
-      </div>
-    </>
-  );
+        <div className="grid gap-6 xl:grid-cols-2">
+          <Panel>
+            <h2 className="shell-title text-2xl font-bold text-slate-900">Disputes</h2>
+            <div className="mt-4 space-y-3">{disputes.map((item) => <div key={item.id} className="rounded-2xl border border-slate-200 p-4"><p className="font-bold text-slate-900">{item.reason}</p><p className="mt-1 text-sm text-slate-500">{item.request_title}</p><StatusPill status={item.status} /></div>)}</div>
+          </Panel>
+          <Panel>
+            <h2 className="shell-title text-2xl font-bold text-slate-900">Submissions</h2>
+            <div className="mt-4 space-y-3">
+              {submissions.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-slate-200 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-slate-900">{item.title || item.assignment_title}</p>
+                      <p className="mt-1 text-sm text-slate-500">{item.submitted_by_email}</p>
+                    </div>
+                    <StatusPill status={item.status} />
+                  </div>
+                  {item.note ? <p className="mt-3 text-sm leading-6 text-slate-600">{item.note}</p> : null}
+                  <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
+                    {item.link_url ? <a href={item.link_url} target="_blank" rel="noreferrer" className="text-workie-blue">Open link</a> : null}
+                    {item.attachment_url ? <a href={item.attachment_url} target="_blank" rel="noreferrer" className="text-workie-blue">Download file</a> : null}
+                  </div>
+                  {item.review_note ? <p className="mt-3 rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">Review note: {item.review_note}</p> : null}
+                  <div className="mt-4">
+                    <TextArea
+                      label="Decision note"
+                      rows="3"
+                      value={submissionReviewNotes[item.id] || ""}
+                      onChange={(event) => setSubmissionReviewNotes((current) => ({ ...current, [item.id]: event.target.value }))}
+                      placeholder="Add helpful context for the client and professional before choosing an outcome."
+                    />
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button onClick={() => runAction(() => reviewSubmissionWithNote(item, "approved", "The submitted work has been reviewed and approved."), "Submission approved.")} className="rounded-full bg-emerald-600 px-3 py-2 text-xs font-semibold !text-white">Approve</button>
+                    <button onClick={() => runAction(() => reviewSubmissionWithNote(item, "changes_requested", "Changes are needed before this can be approved."), "Changes requested.")} className="rounded-full border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700">Request changes</button>
+                    <button onClick={() => runAction(() => reviewSubmissionWithNote(item, "disputed", "This submission has been escalated for dispute review."), "Submission escalated.")} className="rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">Dispute</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </div>
+      </>
+    );
 
   const renderAudit = () => (
     <>
@@ -803,7 +985,16 @@ const StaffConsole = () => {
               <button onClick={logout} className="rounded-full bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Logout</button>
             </div>
           </div>
-          {message ? <div className="mx-auto mt-3 max-w-7xl rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{message}</div> : null}
+          {(message || actionBusy) ? (
+            <div
+              className={`mx-auto mt-3 flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                messageType === "error" ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"
+              }`}
+            >
+              <span>{actionBusy ? "Working on it..." : message}</span>
+              {actionBusy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : null}
+            </div>
+          ) : null}
         </header>
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{renderSection()}</div>
       </main>

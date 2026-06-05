@@ -33,17 +33,32 @@ const lifecycleSteps = [
   ["completed", "Completed"],
 ];
 
+const latestSubmissionFor = (assignment) => assignment?.submissions?.[0] || null;
+const getActionError = (error, fallback = "Something went wrong. Please try again.") => {
+  const data = error?.response?.data;
+  if (typeof data === "string") return data;
+  if (data?.detail) return data.detail;
+  if (data && typeof data === "object") {
+    const first = Object.values(data).flat().find(Boolean);
+    if (first) return String(first);
+  }
+  return error?.message || fallback;
+};
+
 const ClientRequestDetailPage = () => {
   const { requestId } = useParams();
   const [requestDetail, setRequestDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [responseDrafts, setResponseDrafts] = useState({});
+  const [actionLoading, setActionLoading] = useState({});
+  const [actionFeedback, setActionFeedback] = useState({});
   const [escalationForm, setEscalationForm] = useState({
     category: "special_request",
     subject: "",
     body: "",
   });
   const [escalationMessage, setEscalationMessage] = useState("");
+  const [escalationSubmitting, setEscalationSubmitting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -59,33 +74,53 @@ const ClientRequestDetailPage = () => {
     load();
   }, [requestId]);
 
-  const handleAction = async (assignmentId, action) => {
-    await profileService.actOnAssignment(assignmentId, action, responseDrafts[assignmentId] || "");
-    await load();
+  const handleAction = async (assignment, action) => {
+    const latestSubmission = latestSubmissionFor(assignment);
+    setActionLoading((prev) => ({ ...prev, [assignment.id]: action }));
+    setActionFeedback((prev) => ({ ...prev, [assignment.id]: "" }));
+    try {
+      await profileService.actOnAssignment(assignment.id, action, {
+        response: responseDrafts[assignment.id] || "",
+        ...(latestSubmission ? { submission_id: latestSubmission.id } : {}),
+      });
+      setResponseDrafts((prev) => ({ ...prev, [assignment.id]: "" }));
+      await load();
+    } catch (error) {
+      setActionFeedback((prev) => ({ ...prev, [assignment.id]: getActionError(error) }));
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [assignment.id]: "" }));
+    }
   };
 
   const handleEscalationSubmit = async (event) => {
     event.preventDefault();
     if (!escalationForm.subject.trim() || !escalationForm.body.trim()) return;
     setEscalationMessage("");
-    const prefixMap = {
-      dispute: "Dispute",
-      refund: "Refund request",
-      special_request: "Special request",
-    };
-    const thread = await profileService.createThread({
-      thread_type: "client_admin",
-      subject: `${prefixMap[escalationForm.category]}: ${escalationForm.subject.trim()}`,
-      client_request: requestDetail.id,
-    });
-    await profileService.sendMessage(thread.id, escalationForm.body.trim());
-    setEscalationForm({
-      category: "special_request",
-      subject: "",
-      body: "",
-    });
-    setEscalationMessage("Your request has been sent to the admin team and logged against this project.");
-    await load();
+    setEscalationSubmitting(true);
+    try {
+      const prefixMap = {
+        dispute: "Dispute",
+        refund: "Refund request",
+        special_request: "Special request",
+      };
+      const thread = await profileService.createThread({
+        thread_type: "client_admin",
+        subject: `${prefixMap[escalationForm.category]}: ${escalationForm.subject.trim()}`,
+        client_request: requestDetail.id,
+      });
+      await profileService.sendMessage(thread.id, escalationForm.body.trim());
+      setEscalationForm({
+        category: "special_request",
+        subject: "",
+        body: "",
+      });
+      setEscalationMessage("Your request has been sent to the admin team and logged against this project.");
+      await load();
+    } catch (error) {
+      setEscalationMessage(getActionError(error, "Unable to send this request. Please try again."));
+    } finally {
+      setEscalationSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -192,14 +227,50 @@ const ClientRequestDetailPage = () => {
                         </span>
                       </div>
 
-                      {assignment.professional_response ? (
-                        <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                          Latest handoff note: {assignment.professional_response}
-                        </p>
-                      ) : null}
+                        {assignment.professional_response ? (
+                          <p className="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                            Latest handoff note: {assignment.professional_response}
+                          </p>
+                        ) : null}
 
-                      {["client_review", "submitted", "accepted", "in_progress"].includes(assignment.status) ? (
-                        <div className="mt-5 space-y-3">
+                        {assignment.submissions?.length ? (
+                          <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-workie-blue">Submitted work</p>
+                            <div className="mt-3 space-y-3">
+                              {assignment.submissions.map((submission) => (
+                                <div key={submission.id} className="rounded-2xl bg-white p-4 text-sm text-slate-600 shadow-sm">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="font-semibold text-slate-900">{submission.title || "Submitted delivery"}</div>
+                                    <span className={`status-pill ${statusClasses[submission.status] || "bg-slate-100 text-slate-700"}`}>
+                                      {submission.status?.replaceAll("_", " ") || "submitted"}
+                                    </span>
+                                  </div>
+                                  {submission.note ? <p className="mt-2 leading-6">{submission.note}</p> : null}
+                                  <div className="mt-3 flex flex-wrap gap-3">
+                                    {submission.link_url ? (
+                                      <a href={submission.link_url} target="_blank" rel="noreferrer" className="font-semibold text-workie-blue">
+                                        Open project link
+                                      </a>
+                                    ) : null}
+                                    {submission.attachment_url ? (
+                                      <a href={submission.attachment_url} target="_blank" rel="noreferrer" className="font-semibold text-workie-blue">
+                                        Download attachment
+                                      </a>
+                                    ) : null}
+                                  </div>
+                                  {submission.review_note ? (
+                                    <p className="mt-3 rounded-2xl bg-slate-100 px-3 py-2 text-xs text-slate-600">
+                                      Review note: {submission.review_note}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {["client_review", "submitted", "in_progress"].includes(assignment.status) ? (
+                          <div className="mt-5 space-y-3">
                           <textarea
                             rows="3"
                             value={responseDrafts[assignment.id] || ""}
@@ -210,28 +281,40 @@ const ClientRequestDetailPage = () => {
                             placeholder="Add context for approval, changes, or disputes..."
                           />
                           <div className="flex flex-wrap gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleAction(assignment.id, "approve")}
-                              className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
-                            >
-                              Approve completion
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleAction(assignment.id, "request_changes")}
-                              className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                            >
-                              Request changes
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleAction(assignment.id, "dispute")}
-                              className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700"
-                            >
-                              Raise dispute
+                              {latestSubmissionFor(assignment) && ["client_review", "submitted"].includes(assignment.status) ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={Boolean(actionLoading[assignment.id])}
+                                    onClick={() => handleAction(assignment, "approve")}
+                                    className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                                  >
+                                    {actionLoading[assignment.id] === "approve" ? "Approving..." : "Approve completion"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={Boolean(actionLoading[assignment.id])}
+                                    onClick={() => handleAction(assignment, "request_changes")}
+                                    className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-70"
+                                  >
+                                    {actionLoading[assignment.id] === "request_changes" ? "Sending..." : "Request changes"}
+                                  </button>
+                                </>
+                              ) : null}
+                              <button
+                                type="button"
+                                disabled={Boolean(actionLoading[assignment.id])}
+                                onClick={() => handleAction(assignment, "dispute")}
+                                className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+                              >
+                              {actionLoading[assignment.id] === "dispute" ? "Raising..." : "Raise dispute"}
                             </button>
                           </div>
+                          {actionFeedback[assignment.id] ? (
+                            <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                              {actionFeedback[assignment.id]}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
@@ -309,11 +392,17 @@ const ClientRequestDetailPage = () => {
                 </label>
                 <button
                   type="submit"
-                  className="rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold text-white"
+                  disabled={escalationSubmitting}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Send to admin team
+                  {escalationSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : null}
+                  {escalationSubmitting ? "Sending..." : "Send to admin team"}
                 </button>
-                {escalationMessage ? <div className="text-sm text-emerald-700">{escalationMessage}</div> : null}
+                {escalationMessage ? (
+                  <div className={`text-sm ${/unable|error|failed/i.test(escalationMessage) ? "text-rose-700" : "text-emerald-700"}`}>
+                    {escalationMessage}
+                  </div>
+                ) : null}
               </form>
             </div>
           </div>

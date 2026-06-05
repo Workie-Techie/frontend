@@ -23,6 +23,24 @@ export const useAuth = () => {
     }
   }, [auth.token]);
 
+  useEffect(() => {
+    const handleTokenRefreshed = (event) => {
+      const access = event.detail?.access;
+      if (access) {
+        dispatch(setToken(access));
+      }
+    };
+    const handleAuthCleared = () => {
+      dispatch(clearAuth());
+    };
+    window.addEventListener("workietechie:token-refreshed", handleTokenRefreshed);
+    window.addEventListener("workietechie:auth-cleared", handleAuthCleared);
+    return () => {
+      window.removeEventListener("workietechie:token-refreshed", handleTokenRefreshed);
+      window.removeEventListener("workietechie:auth-cleared", handleAuthCleared);
+    };
+  }, [dispatch]);
+
   const fetchCurrentUser = useCallback(async ({ force = false } = {}) => {
     if (!force && auth.user) {
       return auth.user;

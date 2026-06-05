@@ -88,11 +88,19 @@ const profileService = {
     return unwrapList(response.data);
   },
 
-  actOnAssignment: async (assignmentId, action, responseText) => {
-    const response = await privateApi.post(`/api/profile/assignments/${assignmentId}/action/`, {
-      action,
-      response: responseText,
-    });
+  actOnAssignment: async (assignmentId, action, responsePayload = "") => {
+    let payload;
+    let config;
+    if (responsePayload instanceof FormData) {
+      payload = responsePayload;
+      payload.set("action", action);
+      config = { headers: { "Content-Type": "multipart/form-data" } };
+    } else if (typeof responsePayload === "object" && responsePayload !== null) {
+      payload = { action, ...responsePayload };
+    } else {
+      payload = { action, response: responsePayload };
+    }
+    const response = await privateApi.post(`/api/profile/assignments/${assignmentId}/action/`, payload, config);
     return response.data;
   },
 
@@ -106,8 +114,24 @@ const profileService = {
     return response.data;
   },
 
-  sendMessage: async (threadId, body) => {
-    const response = await privateApi.post(`/api/profile/threads/${threadId}/messages/`, { body });
+  sendMessage: async (threadId, payload) => {
+    const hasFile = payload?.attachment instanceof File;
+    const body = typeof payload === "string" ? payload : payload?.body || "";
+    const data = hasFile ? new FormData() : { body };
+    if (hasFile) {
+      data.append("body", body);
+      if (payload.link_url) data.append("link_url", payload.link_url);
+      data.append("attachment", payload.attachment);
+    } else if (typeof payload === "object" && payload) {
+      data.link_url = payload.link_url || "";
+      if (payload.attachment_asset_id) data.attachment_asset_id = payload.attachment_asset_id;
+    }
+    const response = await privateApi.post(`/api/profile/threads/${threadId}/messages/`, data);
+    return response.data;
+  },
+
+  markThreadRead: async (threadId) => {
+    const response = await privateApi.post(`/api/profile/threads/${threadId}/mark-read/`);
     return response.data;
   },
 

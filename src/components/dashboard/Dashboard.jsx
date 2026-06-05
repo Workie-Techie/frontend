@@ -11,6 +11,17 @@ const getUploadError = (error, fallback = "Upload failed. Please try again.") =>
   return detail || fallback;
 };
 
+const getActionError = (error, fallback = "Something went wrong. Please try again.") => {
+  const data = error?.response?.data;
+  if (typeof data === "string") return data;
+  if (data?.detail) return data.detail;
+  if (data && typeof data === "object") {
+    const first = Object.values(data).flat().find(Boolean);
+    if (first) return String(first);
+  }
+  return error?.message || fallback;
+};
+
 const makeUploadItem = (file) => ({
   clientId: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
   file,
@@ -24,6 +35,7 @@ const makeUploadItem = (file) => ({
 
 const hasPendingUploads = (items = []) => items.some((item) => item.status === "uploading");
 const successfulAssetIds = (items = []) => items.filter((item) => item.status === "uploaded" && item.asset?.id).map((item) => item.asset.id);
+const latestSubmissionFor = (assignment) => assignment?.submissions?.[0] || null;
 
 const statusClasses = {
   draft: "bg-slate-100 text-slate-600",
@@ -112,9 +124,19 @@ const Dashboard = () => {
   const [browseProfiles, setBrowseProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [replyDrafts, setReplyDrafts] = useState({});
+  const [replyLinks, setReplyLinks] = useState({});
+  const [replyFiles, setReplyFiles] = useState({});
   const [assignmentResponseDrafts, setAssignmentResponseDrafts] = useState({});
+  const [assignmentDeliveryDrafts, setAssignmentDeliveryDrafts] = useState({});
+  const [assignmentActionLoading, setAssignmentActionLoading] = useState({});
+  const [assignmentFeedback, setAssignmentFeedback] = useState({});
+  const [messageSending, setMessageSending] = useState({});
+  const [supportCreating, setSupportCreating] = useState(false);
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
   const [supportSubject, setSupportSubject] = useState("");
   const [supportMessage, setSupportMessage] = useState("");
+  const [supportLink, setSupportLink] = useState("");
+  const [supportFile, setSupportFile] = useState(null);
   const [supportRequestId, setSupportRequestId] = useState("");
   const [supportFeedback, setSupportFeedback] = useState("");
   const [paymentMessage, setPaymentMessage] = useState("");
@@ -248,45 +270,118 @@ const Dashboard = () => {
   }, [isClient, requests, payments, threads, assignments, portfolioItems, bankAccounts]);
 
   const handleAssignmentAction = async (assignmentId, action) => {
-    await profileService.actOnAssignment(assignmentId, action, assignmentResponseDrafts[assignmentId] || "");
-    setAssignmentResponseDrafts((prev) => ({ ...prev, [assignmentId]: "" }));
-    refreshData();
+    setAssignmentActionLoading((prev) => ({ ...prev, [assignmentId]: action }));
+    setAssignmentFeedback((prev) => ({ ...prev, [assignmentId]: "" }));
+    try {
+      const latestSubmission = latestSubmissionFor(assignments.find((assignment) => assignment.id === assignmentId));
+      await profileService.actOnAssignment(assignmentId, action, {
+        response: assignmentResponseDrafts[assignmentId] || "",
+        ...(latestSubmission ? { submission_id: latestSubmission.id } : {}),
+      });
+      setAssignmentResponseDrafts((prev) => ({ ...prev, [assignmentId]: "" }));
+      refreshData();
+    } catch (error) {
+      setAssignmentFeedback((prev) => ({ ...prev, [assignmentId]: getActionError(error) }));
+    } finally {
+      setAssignmentActionLoading((prev) => ({ ...prev, [assignmentId]: "" }));
+    }
+  };
+
+  const updateDeliveryDraft = (assignmentId, changes) => {
+    setAssignmentDeliveryDrafts((prev) => ({
+      ...prev,
+      [assignmentId]: { title: "", link_url: "", response: "", attachment: null, ...(prev[assignmentId] || {}), ...changes },
+    }));
+  };
+
+  const handleAssignmentSubmit = async (assignmentId) => {
+    const draft = assignmentDeliveryDrafts[assignmentId] || {};
+    const payload = new FormData();
+    payload.append("response", draft.response || "");
+    if (draft.title) payload.append("title", draft.title);
+    if (draft.link_url) payload.append("link_url", draft.link_url);
+    if (draft.attachment) payload.append("attachment", draft.attachment);
+    setAssignmentActionLoading((prev) => ({ ...prev, [assignmentId]: "submit" }));
+    setAssignmentFeedback((prev) => ({ ...prev, [assignmentId]: "" }));
+    try {
+      await profileService.actOnAssignment(assignmentId, "submit", payload);
+      setAssignmentDeliveryDrafts((prev) => ({ ...prev, [assignmentId]: { title: "", link_url: "", response: "", attachment: null } }));
+      refreshData();
+    } catch (error) {
+      setAssignmentFeedback((prev) => ({ ...prev, [assignmentId]: getActionError(error) }));
+    } finally {
+      setAssignmentActionLoading((prev) => ({ ...prev, [assignmentId]: "" }));
+    }
   };
 
   const handleSendMessage = async (threadId) => {
-    const body = replyDrafts[threadId];
-    if (!body?.trim()) return;
-    await profileService.sendMessage(threadId, body.trim());
-    setReplyDrafts((prev) => ({ ...prev, [threadId]: "" }));
-    refreshData();
+    const body = replyDrafts[threadId] || "";
+    const linkUrl = replyLinks[threadId] || "";
+    const attachment = replyFiles[threadId] || null;
+    if (!body.trim() && !linkUrl.trim() && !attachment) return;
+    setMessageSending((prev) => ({ ...prev, [threadId]: true }));
+    try {
+      await profileService.sendMessage(threadId, { body: body.trim(), link_url: linkUrl.trim(), attachment });
+      setReplyDrafts((prev) => ({ ...prev, [threadId]: "" }));
+      setReplyLinks((prev) => ({ ...prev, [threadId]: "" }));
+      setReplyFiles((prev) => ({ ...prev, [threadId]: null }));
+      refreshData();
+    } catch (error) {
+      setSupportFeedback(getActionError(error, "Unable to send your message. Please try again."));
+    } finally {
+      setMessageSending((prev) => ({ ...prev, [threadId]: false }));
+    }
+  };
+
+  const handleMarkThreadRead = async (threadId) => {
+    await profileService.markThreadRead(threadId);
+    setThreads((prev) => prev.map((thread) => (thread.id === threadId ? { ...thread, unread_count: 0 } : thread)));
   };
 
   const handleCreateSupportThread = async () => {
-    if (!supportSubject.trim() || !supportMessage.trim()) return;
-    const thread = await profileService.createThread({
-      thread_type: isClient ? "client_admin" : "professional_admin",
-      subject: supportSubject.trim(),
-      ...(isClient && supportRequestId ? { client_request: Number(supportRequestId) } : {}),
-    });
-    await profileService.sendMessage(thread.id, supportMessage.trim());
-    setSupportSubject("");
-    setSupportMessage("");
-    setSupportRequestId("");
-    setSupportFeedback("Support thread opened successfully.");
-    refreshData();
+    if (!supportSubject.trim() || (!supportMessage.trim() && !supportLink.trim() && !supportFile)) return;
+    setSupportCreating(true);
+    setSupportFeedback("");
+    try {
+      const thread = await profileService.createThread({
+        thread_type: isClient ? "client_admin" : "professional_admin",
+        subject: supportSubject.trim(),
+        ...(isClient && supportRequestId ? { client_request: Number(supportRequestId) } : {}),
+      });
+      await profileService.sendMessage(thread.id, { body: supportMessage.trim(), link_url: supportLink.trim(), attachment: supportFile });
+      setSupportSubject("");
+      setSupportMessage("");
+      setSupportLink("");
+      setSupportFile(null);
+      setSupportRequestId("");
+      setSupportFeedback("Support thread opened successfully.");
+      refreshData();
+    } catch (error) {
+      setSupportFeedback(getActionError(error, "Unable to open the support thread. Please try again."));
+    } finally {
+      setSupportCreating(false);
+    }
   };
 
   const handlePaymentSubmit = async (event) => {
     event.preventDefault();
     if (!paymentForm.client_request || !paymentForm.amount) return;
+    setPaymentSubmitting(true);
+    setPaymentMessage("");
     const payload = new FormData();
     Object.entries(paymentForm).forEach(([key, value]) => {
       if (value) payload.append(key, key === "client_request" ? Number(value) : value);
     });
-    await profileService.createPayment(payload);
-    setPaymentForm({ client_request: "", method: "manual", amount: "", reference: "", notes: "", evidence: null });
-    setPaymentMessage("Payment record submitted. The admin team will verify and update your request.");
-    refreshData();
+    try {
+      await profileService.createPayment(payload);
+      setPaymentForm({ client_request: "", method: "manual", amount: "", reference: "", notes: "", evidence: null });
+      setPaymentMessage("Payment record submitted. The admin team will verify and update your request.");
+      refreshData();
+    } catch (error) {
+      setPaymentMessage(getActionError(error, "Unable to submit payment record. Please check the details and try again."));
+    } finally {
+      setPaymentSubmitting(false);
+    }
   };
 
   const handlePortfolioSubmit = async (event) => {
@@ -593,29 +688,82 @@ const Dashboard = () => {
                 <StatusPill status={assignment.status} />
               </div>
               <p className="mt-4 text-sm leading-6 text-slate-600">{assignment.offer_message || assignment.client_request.summary}</p>
+              {assignment.submissions?.length ? (
+                <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-workie-blue">Delivery submissions</p>
+                  <div className="mt-3 space-y-3">
+                    {assignment.submissions.map((submission) => (
+                      <div key={submission.id} className="rounded-2xl bg-white p-4 text-sm text-slate-600 shadow-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="font-semibold text-slate-900">{submission.title || "Submitted delivery"}</div>
+                          <StatusPill status={submission.status} />
+                        </div>
+                        {submission.note ? <p className="mt-2 leading-6">{submission.note}</p> : null}
+                        <div className="mt-3 flex flex-wrap gap-3">
+                          {submission.link_url ? (
+                            <a href={submission.link_url} target="_blank" rel="noreferrer" className="font-semibold text-workie-blue">Open project link</a>
+                          ) : null}
+                          {submission.attachment_url ? (
+                            <a href={submission.attachment_url} target="_blank" rel="noreferrer" className="font-semibold text-workie-blue">Download attachment</a>
+                          ) : null}
+                        </div>
+                        {submission.review_note ? (
+                          <p className="mt-3 rounded-2xl bg-slate-100 px-3 py-2 text-xs text-slate-600">Review note: {submission.review_note}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {!isClient && assignment.status === "assignment_sent" ? (
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <button onClick={() => handleAssignmentAction(assignment.id, "accept")} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold !text-white">
-                    Accept
+                  <button disabled={Boolean(assignmentActionLoading[assignment.id])} onClick={() => handleAssignmentAction(assignment.id, "accept")} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-70">
+                    {assignmentActionLoading[assignment.id] === "accept" ? "Accepting..." : "Accept"}
                   </button>
-                  <button onClick={() => handleAssignmentAction(assignment.id, "decline")} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
-                    Decline
+                  <button disabled={Boolean(assignmentActionLoading[assignment.id])} onClick={() => handleAssignmentAction(assignment.id, "decline")} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-70">
+                    {assignmentActionLoading[assignment.id] === "decline" ? "Declining..." : "Decline"}
                   </button>
                 </div>
               ) : null}
               {!isClient && ["accepted", "in_progress"].includes(assignment.status) ? (
-                <div className="mt-5 space-y-3">
+                <div className="mt-5 space-y-3 rounded-3xl border border-slate-200 bg-white p-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <input
+                      value={assignmentDeliveryDrafts[assignment.id]?.title || ""}
+                      onChange={(event) => updateDeliveryDraft(assignment.id, { title: event.target.value })}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-workie-gold"
+                      placeholder="Delivery title"
+                    />
+                    <input
+                      type="url"
+                      value={assignmentDeliveryDrafts[assignment.id]?.link_url || ""}
+                      onChange={(event) => updateDeliveryDraft(assignment.id, { link_url: event.target.value })}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-workie-gold"
+                      placeholder="Project link, file link, or live URL"
+                    />
+                  </div>
                   <textarea
                     rows="3"
-                    value={assignmentResponseDrafts[assignment.id] || ""}
-                    onChange={(event) => setAssignmentResponseDrafts((prev) => ({ ...prev, [assignment.id]: event.target.value }))}
+                    value={assignmentDeliveryDrafts[assignment.id]?.response || ""}
+                    onChange={(event) => updateDeliveryDraft(assignment.id, { response: event.target.value })}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-workie-gold"
-                    placeholder="Add a delivery note..."
+                    placeholder="Add delivery notes, handoff instructions, or review context..."
                   />
-                  <button onClick={() => handleAssignmentAction(assignment.id, "submit")} className="rounded-full bg-workie-blue px-4 py-2 text-sm font-semibold !text-white">
-                    Submit for review
+                  <input
+                    type="file"
+                    onChange={(event) => updateDeliveryDraft(assignment.id, { attachment: event.target.files?.[0] || null })}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+                  />
+                  <button disabled={assignmentActionLoading[assignment.id] === "submit"} onClick={() => handleAssignmentSubmit(assignment.id)} className="inline-flex items-center gap-2 rounded-full bg-workie-blue px-4 py-2 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-70">
+                    {assignmentActionLoading[assignment.id] === "submit" ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : null}
+                    {assignmentActionLoading[assignment.id] === "submit" ? "Submitting..." : "Submit for review"}
                   </button>
                 </div>
+              ) : null}
+              {assignmentFeedback[assignment.id] ? (
+                <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {assignmentFeedback[assignment.id]}
+                </p>
               ) : null}
             </div>
           ))
@@ -643,8 +791,18 @@ const Dashboard = () => {
           ) : null}
           <input value={supportSubject} onChange={(event) => setSupportSubject(event.target.value)} placeholder="Subject" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" />
           <textarea value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} rows="3" placeholder="Write your message..." className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" />
-          <button onClick={handleCreateSupportThread} className="w-fit rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Open thread</button>
-          {supportFeedback ? <p className="text-sm text-emerald-700">{supportFeedback}</p> : null}
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={supportLink} onChange={(event) => setSupportLink(event.target.value)} placeholder="Optional review link" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" />
+            <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600 transition hover:border-workie-gold">
+              <span className="truncate">{supportFile?.name || "Attach a file"}</span>
+              <input type="file" className="hidden" onChange={(event) => setSupportFile(event.target.files?.[0] || null)} />
+            </label>
+          </div>
+          <button disabled={supportCreating} onClick={handleCreateSupportThread} className="inline-flex w-fit items-center gap-2 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-70">
+            {supportCreating ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : null}
+            {supportCreating ? "Opening..." : "Open thread"}
+          </button>
+          {supportFeedback ? <p className={`text-sm ${/unable|error|failed/i.test(supportFeedback) ? "text-rose-700" : "text-emerald-700"}`}>{supportFeedback}</p> : null}
         </div>
       </div>
       <div className="mt-6 space-y-4">
@@ -656,24 +814,49 @@ const Dashboard = () => {
                   <h3 className="text-lg font-bold text-slate-900">{thread.subject}</h3>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">{thread.thread_type?.replaceAll("_", " ")}</p>
                 </div>
-                <span className={`status-pill ${thread.is_closed ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
-                  {thread.is_closed ? "Closed" : `${thread.unread_count || 0} unread`}
-                </span>
-              </div>
+                  <span className={`status-pill ${thread.is_closed ? "bg-slate-100 text-slate-500" : "bg-emerald-100 text-emerald-700"}`}>
+                    {thread.is_closed ? "Closed" : `${thread.unread_count || 0} unread`}
+                  </span>
+                </div>
               <div className="mt-4 space-y-3">
                 {(thread.messages || []).slice(-3).map((message) => (
                   <div key={message.id} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
                     <div className="mb-1 font-semibold text-slate-900">{message.sender_name}</div>
-                    <div>{message.body}</div>
+                    {message.body ? <div>{message.body}</div> : null}
+                    {message.link_url ? (
+                      <a href={message.link_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex font-semibold text-workie-blue hover:text-workie-gold">
+                        Open shared link
+                      </a>
+                    ) : null}
+                    {message.attachment_url ? (
+                      <a href={message.attachment_url} target="_blank" rel="noreferrer" className="mt-2 block rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-workie-gold">
+                        View attachment{message.attachment?.original_name ? `: ${message.attachment.original_name}` : ""}
+                      </a>
+                    ) : null}
                   </div>
                 ))}
               </div>
-              {!thread.is_closed ? (
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <input value={replyDrafts[thread.id] || ""} onChange={(event) => setReplyDrafts((prev) => ({ ...prev, [thread.id]: event.target.value }))} className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" placeholder="Reply..." />
-                  <button onClick={() => handleSendMessage(thread.id)} className="rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Send</button>
-                </div>
-              ) : null}
+                {!thread.is_closed ? (
+                  <div className="mt-4 grid gap-3">
+                    <input value={replyDrafts[thread.id] || ""} onChange={(event) => setReplyDrafts((prev) => ({ ...prev, [thread.id]: event.target.value }))} className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" placeholder="Reply..." />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <input value={replyLinks[thread.id] || ""} onChange={(event) => setReplyLinks((prev) => ({ ...prev, [thread.id]: event.target.value }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" placeholder="Optional link" />
+                      <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600 transition hover:border-workie-gold">
+                        <span className="truncate">{replyFiles[thread.id]?.name || "Attach file"}</span>
+                        <input type="file" className="hidden" onChange={(event) => setReplyFiles((prev) => ({ ...prev, [thread.id]: event.target.files?.[0] || null }))} />
+                      </label>
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button disabled={messageSending[thread.id]} onClick={() => handleSendMessage(thread.id)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-70">
+                        {messageSending[thread.id] ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : null}
+                        {messageSending[thread.id] ? "Sending..." : "Send"}
+                      </button>
+                      {thread.unread_count ? (
+                        <button onClick={() => handleMarkThreadRead(thread.id)} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700">Mark read</button>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
             </div>
           ))
         ) : (
@@ -699,8 +882,11 @@ const Dashboard = () => {
             <input type="file" onChange={(event) => setPaymentForm((prev) => ({ ...prev, evidence: event.target.files?.[0] || null }))} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" />
           </div>
           <textarea value={paymentForm.notes} onChange={(event) => setPaymentForm((prev) => ({ ...prev, notes: event.target.value }))} rows="3" placeholder="Notes for admin verification" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-workie-gold" />
-          <button className="w-fit rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white">Submit payment record</button>
-          {paymentMessage ? <p className="text-sm text-emerald-700">{paymentMessage}</p> : null}
+          <button disabled={paymentSubmitting} className="inline-flex w-fit items-center gap-2 rounded-2xl bg-workie-blue px-5 py-3 text-sm font-semibold !text-white disabled:cursor-not-allowed disabled:opacity-70">
+            {paymentSubmitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : null}
+            {paymentSubmitting ? "Submitting..." : "Submit payment record"}
+          </button>
+          {paymentMessage ? <p className={`text-sm ${/unable|error|failed|required/i.test(paymentMessage) ? "text-rose-700" : "text-emerald-700"}`}>{paymentMessage}</p> : null}
         </form>
       ) : null}
       <div className="mt-6 space-y-4">
