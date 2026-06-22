@@ -18,6 +18,9 @@ import PublicLayout from "./layouts/PublicLayout";
 import useAuth from "./hooks/useAuth";
 import ClientRequestPage from "./pages/ClientRequestPage";
 import SharedPortfolioPage from "./pages/SharedPortfolioPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
+import WaitlistPage from "./pages/WaitlistPage";
 
 function App() {
   const { token, user, bootstrapAuth } = useAuth();
@@ -32,10 +35,13 @@ function App() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Route>
       <Route element={<PublicLayout tone="solid" />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/waitlist" element={<WaitlistPage />} />
         <Route path="/check-email" element={<CheckEmailPage />} />
         <Route path="/activate/:uid/:token" element={<ActivateAccountPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import logoImage from "../../assets/logo2.png";
 import DynamicQuestionField from "../../common/DynamicQuestionField";
+import PasswordField from "../../common/PasswordField";
 import useAuth from "../../hooks/useAuth";
 import profileService from "../../services/profileService";
 
@@ -333,25 +334,30 @@ const Register = () => {
           />
         </label>
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="text-sm font-medium text-slate-700">
-            Password
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-workie-gold focus:bg-white"
-            />
-          </label>
-          <label className="text-sm font-medium text-slate-700">
-            Confirm password
-            <input
-              type="password"
-              value={formData.re_password}
-              onChange={(event) => setFormData((prev) => ({ ...prev, re_password: event.target.value }))}
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-workie-gold focus:bg-white"
-            />
-          </label>
+          <PasswordField
+            label="Password"
+            value={formData.password}
+            onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            label="Confirm password"
+            value={formData.re_password}
+            onChange={(event) => setFormData((prev) => ({ ...prev, re_password: event.target.value }))}
+            autoComplete="new-password"
+          />
         </div>
+        <p className="text-xs leading-6 text-slate-500">
+          By creating an account, you agree to the{" "}
+          <Link to="/terms" className="font-semibold text-workie-blue">
+            Terms & Conditions
+          </Link>{" "}
+          and acknowledge the{" "}
+          <Link to="/privacy-policy" className="font-semibold text-workie-blue">
+            Privacy Policy
+          </Link>
+          .
+        </p>
         <button
           type="submit"
           disabled={loading}

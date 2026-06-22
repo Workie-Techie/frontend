@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import logoImage from "../../assets/logo2.png";
+import PasswordField from "../../common/PasswordField";
 import useAuth from "../../hooks/useAuth";
 
 const Login = () => {
@@ -55,15 +56,12 @@ const Login = () => {
               />
             </label>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Password
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-workie-gold focus:bg-white"
-              />
-            </label>
+            <PasswordField
+              label="Password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+            />
 
             <div className="flex items-center justify-between text-sm">
               <Link to="/forgot-password" className="font-semibold text-workie-blue">
@@ -81,6 +79,17 @@ const Login = () => {
             >
               {loading ? "Signing in..." : "Login"}
             </button>
+            <p className="text-center text-xs leading-6 text-slate-500">
+              By continuing, you agree to the{" "}
+              <Link to="/terms" className="font-semibold text-workie-blue">
+                Terms & Conditions
+              </Link>{" "}
+              and acknowledge the{" "}
+              <Link to="/privacy-policy" className="font-semibold text-workie-blue">
+                Privacy Policy
+              </Link>
+              .
+            </p>
           </form>
         </div>
       </div>

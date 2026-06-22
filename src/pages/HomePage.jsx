@@ -181,7 +181,7 @@ const faqs = [
 ];
 
 const FloatingCard = ({ className = "", icon: Icon, title, body }) => (
-  <div className={`absolute rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_24px_70px_rgba(21,75,108,0.18)] backdrop-blur ${className}`}>
+  <div className={`absolute rounded-[22px] border border-white/70 bg-white/90 p-3 shadow-[0_24px_70px_rgba(21,75,108,0.18)] backdrop-blur sm:p-4 ${className}`}>
     <div className="flex items-center gap-3">
       <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-workie-blue text-white">
         <Icon className="h-5 w-5" />
@@ -197,13 +197,13 @@ const FloatingCard = ({ className = "", icon: Icon, title, body }) => (
 const SectionIntro = ({ eyebrow, title, body, centered = false }) => (
   <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
     <p className="text-xs font-bold uppercase tracking-[0.22em] text-workie-gold">{eyebrow}</p>
-    <h2 className="shell-title mt-3 text-3xl font-bold leading-tight text-slate-950 sm:text-5xl">{title}</h2>
-    {body ? <p className="mt-4 text-base leading-8 text-slate-600 sm:text-lg">{body}</p> : null}
+    <h2 className="shell-title mt-3 text-[1.55rem] font-bold leading-[1.08] text-slate-950 sm:text-4xl sm:leading-tight lg:text-5xl">{title}</h2>
+    {body ? <p className="mt-3 text-[0.92rem] leading-6 text-slate-600 sm:mt-4 sm:text-lg sm:leading-8">{body}</p> : null}
   </div>
 );
 
 const CutoutScene = ({ src, alt, variant = "client" }) => (
-  <div className="relative mx-auto h-[360px] max-w-[420px] sm:h-[430px]">
+  <div className="relative mx-auto h-[270px] max-w-[340px] sm:h-[430px] sm:max-w-[420px]">
     <div className={`absolute inset-x-8 bottom-8 h-64 rounded-[48%] ${variant === "client" ? "bg-workie-gold/25" : "bg-workie-blue/10"}`} />
     <div className={`absolute left-4 top-10 h-28 w-28 rounded-[34px] ${variant === "client" ? "bg-workie-blue/10" : "bg-workie-gold/20"} rotate-[-10deg]`} />
     <div className={`absolute right-4 top-2 h-20 w-20 rounded-full ${variant === "client" ? "bg-white" : "bg-workie-gold/25"} shadow-[0_18px_45px_rgba(15,23,42,0.08)]`} />
@@ -215,7 +215,7 @@ const CutoutScene = ({ src, alt, variant = "client" }) => (
       <p className="text-sm font-bold text-slate-900">{variant === "client" ? "Matched support" : "Assignment fit"}</p>
       <p className="text-xs text-slate-500">{variant === "client" ? "Guided next steps" : "Organized delivery"}</p>
     </div>
-    <img src={src} alt={alt} className="absolute bottom-0 left-1/2 z-10 h-[350px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_28px_35px_rgba(21,75,108,0.22)] sm:h-[430px]" loading="lazy" />
+    <img src={src} alt={alt} className="absolute bottom-0 left-1/2 z-10 h-[270px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_28px_35px_rgba(21,75,108,0.22)] sm:h-[430px]" loading="lazy" />
   </div>
 );
 
@@ -234,12 +234,12 @@ const AudienceCard = ({ src, alt, label, title, body, variant, children }) => (
 );
 
 const ProcessVisual = () => (
-  <div className="relative mx-auto min-h-[560px] max-w-[560px] overflow-hidden rounded-[46px] bg-gradient-to-br from-white via-[#fff7de] to-workie-blue/10 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.1)]">
+  <div className="relative mx-auto min-h-[390px] max-w-[560px] overflow-hidden rounded-[30px] bg-gradient-to-br from-white via-[#fff7de] to-workie-blue/10 p-4 shadow-[0_30px_90px_rgba(15,23,42,0.1)] sm:min-h-[560px] sm:rounded-[46px] sm:p-6">
     <div className="absolute -left-16 top-16 h-52 w-52 rounded-full bg-workie-gold/25" />
     <div className="absolute right-6 top-10 h-28 w-28 rounded-[36px] bg-white/80 shadow-[0_18px_50px_rgba(15,23,42,0.08)]" />
     <div className="absolute -right-10 bottom-10 h-64 w-64 rounded-full bg-workie-blue/10" />
-    <img src={landingProfessionalCutout} alt="Professional moving through a guided project workflow" className="absolute bottom-0 right-2 z-10 h-[500px] object-contain drop-shadow-[0_30px_42px_rgba(21,75,108,0.2)]" loading="lazy" />
-    <div className="relative z-20 max-w-[330px] space-y-4 pt-6">
+    <img src={landingProfessionalCutout} alt="Professional moving through a guided project workflow" className="absolute bottom-0 right-[-34px] z-10 h-[310px] object-contain drop-shadow-[0_30px_42px_rgba(21,75,108,0.2)] sm:right-2 sm:h-[500px]" loading="lazy" />
+    <div className="relative z-20 max-w-[300px] space-y-3 pt-4 sm:max-w-[330px] sm:space-y-4 sm:pt-6">
       {["Brief received", "Match reviewed", "Work submitted", "Client approval"].map((item, index) => (
         <div key={item} className="flex items-center gap-3 rounded-[24px] border border-white/80 bg-white/90 p-4 shadow-[0_18px_55px_rgba(21,75,108,0.12)] backdrop-blur">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-workie-blue text-sm font-black text-white">{index + 1}</span>
@@ -250,7 +250,7 @@ const ProcessVisual = () => (
         </div>
       ))}
     </div>
-    <div className="absolute bottom-8 left-8 z-20 rounded-[26px] bg-workie-gold px-5 py-4 text-white shadow-[0_18px_50px_rgba(223,159,39,0.32)]">
+    <div className="absolute bottom-5 left-5 z-20 rounded-[22px] bg-workie-gold px-4 py-3 text-white shadow-[0_18px_50px_rgba(223,159,39,0.32)] sm:bottom-8 sm:left-8 sm:rounded-[26px] sm:px-5 sm:py-4">
       <p className="text-xs font-bold uppercase tracking-[0.18em]">Visible status</p>
       <p className="mt-1 text-lg font-black">No guessing</p>
     </div>
@@ -258,12 +258,12 @@ const ProcessVisual = () => (
 );
 
 const QualityVisual = () => (
-  <div className="relative mx-auto min-h-[560px] max-w-[600px] overflow-hidden rounded-[48px] bg-gradient-to-br from-workie-blue via-workie-blue-light to-[#0f7ba8] p-6 shadow-[0_30px_90px_rgba(21,75,108,0.22)]">
+  <div className="relative mx-auto min-h-[390px] max-w-[600px] overflow-hidden rounded-[30px] bg-gradient-to-br from-workie-blue via-workie-blue-light to-[#0f7ba8] p-4 shadow-[0_30px_90px_rgba(21,75,108,0.22)] sm:min-h-[560px] sm:rounded-[48px] sm:p-6">
     <div className="absolute inset-8 rounded-[46px] bg-white/10" />
     <div className="absolute -left-12 top-16 h-56 w-56 rounded-full bg-white/10" />
     <div className="absolute right-8 top-8 h-28 w-28 rounded-[36px] bg-workie-gold/25" />
-    <img src={landingClientCutout} alt="Client reviewing quality, approval, and communication signals" className="absolute bottom-0 right-5 z-10 h-[520px] object-contain drop-shadow-[0_32px_42px_rgba(0,0,0,0.28)]" loading="lazy" />
-    <div className="relative z-20 max-w-[340px] space-y-4 pt-8">
+    <img src={landingClientCutout} alt="Client reviewing quality, approval, and communication signals" className="absolute bottom-0 right-[-42px] z-10 h-[315px] object-contain drop-shadow-[0_32px_42px_rgba(0,0,0,0.28)] sm:right-5 sm:h-[520px]" loading="lazy" />
+    <div className="relative z-20 max-w-[300px] space-y-3 pt-5 sm:max-w-[340px] sm:space-y-4 sm:pt-8">
       {[
         ["Scope", "Clear expectation before work starts"],
         ["Files", "Links and attachments stay visible"],
@@ -275,7 +275,7 @@ const QualityVisual = () => (
         </div>
       ))}
     </div>
-    <div className="absolute bottom-8 left-8 z-20 rounded-[28px] border border-white/20 bg-[#12354b]/90 px-5 py-4 text-white backdrop-blur">
+    <div className="absolute bottom-5 left-5 z-20 rounded-[22px] border border-white/20 bg-[#12354b]/90 px-4 py-3 text-white backdrop-blur sm:bottom-8 sm:left-8 sm:rounded-[28px] sm:px-5 sm:py-4">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-workie-gold">Accountability</p>
       <p className="mt-1 text-lg font-black">Built into every job</p>
     </div>
@@ -307,24 +307,24 @@ const HomePage = () => {
   return (
     <div className="min-h-screen overflow-hidden bg-[#fffaf0]">
       <main>
-        <section className="relative isolate overflow-hidden bg-[#fff1c9] px-4 pb-16 pt-28 sm:px-6 lg:px-8">
+        <section className="relative isolate overflow-hidden bg-[#fff1c9] px-4 pb-10 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:px-8">
           <div className="absolute inset-x-0 bottom-[-1px] h-40 rounded-t-[50%] bg-[#fffaf0]" />
           <div className="absolute -left-24 top-36 h-72 w-72 rounded-full bg-workie-gold/20 blur-3xl" />
           <div className="absolute right-0 top-0 h-[560px] w-[560px] rounded-bl-[240px] bg-white/30" />
 
-          <div className="relative mx-auto grid max-w-7xl items-center gap-10 lg:min-h-[760px] lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="relative mx-auto grid max-w-7xl items-center gap-6 lg:min-h-[760px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-10">
             <div className="pt-4">
-              <p className="inline-flex rounded-full border border-workie-gold/30 bg-white/60 px-5 py-2 text-xs font-bold uppercase tracking-[0.22em] text-workie-blue">
+              <p className="inline-flex rounded-full border border-workie-gold/30 bg-white/60 px-4 py-2 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-workie-blue sm:px-5 sm:text-xs sm:tracking-[0.22em]">
                 {content.eyebrow}
               </p>
-              <div className="mt-6 inline-flex rounded-full border border-white/80 bg-white/75 p-1 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur">
+              <div className="mt-5 inline-flex rounded-full border border-white/80 bg-white/75 p-1 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur sm:mt-6">
                 {Object.entries(audienceContent).map(([key, item]) => (
                   <button
                     key={key}
                     type="button"
                     aria-pressed={audience === key}
                     onClick={() => setAudience(key)}
-                    className={`rounded-full px-5 py-3 text-sm font-black transition ${
+                    className={`rounded-full px-4 py-2.5 text-xs font-black transition sm:px-5 sm:py-3 sm:text-sm ${
                       audience === key ? "bg-workie-blue !text-white shadow-[0_12px_28px_rgba(21,75,108,0.22)]" : "text-slate-600 hover:text-workie-blue"
                     }`}
                   >
@@ -332,15 +332,15 @@ const HomePage = () => {
                   </button>
                 ))}
               </div>
-              <h1 className="shell-title mt-7 max-w-4xl text-[3.1rem] font-bold leading-[0.98] text-slate-950 sm:text-6xl lg:text-7xl">
+              <h1 className="shell-title mt-5 max-w-4xl text-[2.05rem] font-bold leading-[1.05] text-slate-950 min-[390px]:text-[2.25rem] sm:mt-7 sm:text-6xl sm:leading-[0.98] lg:text-7xl">
                 {heroTitle}
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-700">{heroBody}</p>
-              <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-                <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-workie-blue px-8 py-4 text-base font-bold !text-white shadow-[0_18px_40px_rgba(21,75,108,0.25)] transition hover:-translate-y-0.5">
+              <p className="mt-4 max-w-2xl text-[0.95rem] leading-7 text-slate-700 sm:mt-6 sm:text-lg sm:leading-9">{heroBody}</p>
+              <div className="mt-6 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:gap-4">
+                <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-workie-blue px-6 py-3.5 text-sm font-bold !text-white shadow-[0_18px_40px_rgba(21,75,108,0.25)] transition hover:-translate-y-0.5 sm:px-8 sm:py-4 sm:text-base">
                   {content.primaryCta} <HiOutlineArrowRight className="h-5 w-5" />
                 </Link>
-                <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-workie-blue shadow-[0_14px_34px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5">
+                <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-bold text-workie-blue shadow-[0_14px_34px_rgba(15,23,42,0.08)] transition hover:-translate-y-0.5 sm:px-8 sm:py-4 sm:text-base">
                   {content.secondaryCta}
                 </a>
               </div>
@@ -349,22 +349,22 @@ const HomePage = () => {
                   Switch to {oppositeContent.label.toLowerCase()} view
                 </button>
               </div>
-              <div className="mt-11 grid gap-4 sm:grid-cols-3">
+              <div className="mt-8 grid gap-3 sm:mt-11 sm:grid-cols-3 sm:gap-4">
                 {content.stats.map(([label, body]) => (
-                  <div key={label} className="rounded-[26px] border border-white/70 bg-white/60 p-4 backdrop-blur">
-                    <p className="text-2xl font-black text-workie-blue">{label}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{body}</p>
+                  <div key={label} className="rounded-[22px] border border-white/70 bg-white/60 p-3 backdrop-blur sm:rounded-[26px] sm:p-4">
+                    <p className="text-xl font-black text-workie-blue sm:text-2xl">{label}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">{body}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="relative mx-auto min-h-[560px] w-full max-w-[620px] lg:min-h-[680px] lg:max-w-none">
+            <div className="relative mx-auto min-h-[350px] w-full max-w-[440px] sm:min-h-[560px] sm:max-w-[620px] lg:min-h-[680px] lg:max-w-none">
               <div className="absolute left-10 top-16 h-[400px] w-[400px] rounded-[42%] bg-workie-gold/25 blur-[1px] sm:h-[520px] sm:w-[520px]" />
               <div className="absolute right-4 top-8 h-32 w-32 rounded-[40px] bg-white/70 shadow-[0_22px_60px_rgba(15,23,42,0.08)]" />
               <div className="absolute bottom-10 right-0 h-44 w-44 rounded-full bg-workie-blue/10" />
-              <div className="absolute left-[48%] top-8 h-[500px] w-[390px] -translate-x-1/2 rounded-[46%] bg-white/35 sm:h-[630px] sm:w-[480px]" />
-              <img src={content.heroImage} alt={content.heroAlt} className="absolute bottom-0 left-[48%] z-10 h-[500px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_34px_42px_rgba(21,75,108,0.24)] sm:h-[620px]" fetchPriority="high" />
+              <div className="absolute left-[48%] top-8 h-[310px] w-[240px] -translate-x-1/2 rounded-[46%] bg-white/35 sm:h-[630px] sm:w-[480px]" />
+              <img src={content.heroImage} alt={content.heroAlt} className="absolute bottom-0 left-[48%] z-10 h-[330px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_34px_42px_rgba(21,75,108,0.24)] sm:h-[620px]" fetchPriority="high" />
               <FloatingCard className="left-2 top-40 z-20 hidden w-[300px] sm:block" icon={HiOutlineUserGroup} title="Matched fit" body="Skills, portfolio, and scope reviewed together." />
               <FloatingCard className="bottom-24 right-0 z-20 hidden w-[330px] sm:block" icon={HiOutlineCheckBadge} title="Review-ready delivery" body="Files, links, feedback, and approvals stay visible." />
               <div className="absolute bottom-0 left-8 z-20 hidden w-[310px] rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur sm:block">
@@ -382,12 +382,12 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="px-4 py-14 sm:px-6 lg:px-8">
+        <section className="px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
           <div className="mx-auto max-w-7xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-400">Built around high-demand digital work</p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 sm:text-sm sm:tracking-[0.22em]">Built around high-demand digital work</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-2 sm:mt-8 sm:gap-3">
               {servicePills.map((service) => (
-                <span key={service} className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-600 shadow-sm">
+                <span key={service} className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 shadow-sm sm:px-6 sm:py-3 sm:text-sm">
                   {service}
                 </span>
               ))}
@@ -395,7 +395,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section id="how-it-works" className="px-4 py-16 sm:px-6 lg:px-8">
+        <section id="how-it-works" className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <SectionIntro
               centered
@@ -403,21 +403,21 @@ const HomePage = () => {
               title="A calmer way to get professional work done."
               body="Instead of leaving clients and professionals to figure everything out alone, WorkieTechie creates a guided bridge. Clients bring the need. Professionals bring the skill. The platform keeps the process organized."
             />
-            <div className="mt-20 grid gap-10 lg:grid-cols-3">
+            <div className="mt-14 grid gap-8 sm:mt-20 sm:gap-10 lg:grid-cols-3">
               {featureCards.map((card) => (
-                <article key={card.title} className="relative rounded-[34px] border border-slate-100 bg-white p-8 pt-14 shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-                  <span className="absolute -top-10 left-1/2 flex h-20 w-20 -translate-x-1/2 items-center justify-center rounded-full bg-workie-blue text-white shadow-[0_18px_40px_rgba(21,75,108,0.22)]">
-                    <card.icon className="h-9 w-9" />
+                <article key={card.title} className="relative rounded-[28px] border border-slate-100 bg-white p-6 pt-12 shadow-[0_28px_80px_rgba(15,23,42,0.08)] sm:rounded-[34px] sm:p-8 sm:pt-14">
+                  <span className="absolute -top-8 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full bg-workie-blue text-white shadow-[0_18px_40px_rgba(21,75,108,0.22)] sm:-top-10 sm:h-20 sm:w-20">
+                    <card.icon className="h-7 w-7 sm:h-9 sm:w-9" />
                   </span>
-                  <h3 className="shell-title text-center text-2xl font-bold text-slate-950">{card.title}</h3>
-                  <p className="mt-4 text-center text-sm leading-7 text-slate-600">{card.body}</p>
+                  <h3 className="shell-title text-center text-xl font-bold text-slate-950 sm:text-2xl">{card.title}</h3>
+                  <p className="mt-3 text-center text-sm leading-6 text-slate-600 sm:mt-4 sm:leading-7">{card.body}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <SectionIntro
               centered
@@ -425,7 +425,7 @@ const HomePage = () => {
               title={content.audienceTitle}
               body={content.audienceBody}
             />
-            <div className="mt-12 grid gap-8 lg:grid-cols-2">
+            <div className="mt-9 grid gap-6 sm:mt-12 sm:gap-8 lg:grid-cols-2">
               <AudienceCard
                 src={content.activeImage}
                 alt={content.heroAlt}
@@ -464,8 +464,8 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section id="trust" className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+        <section id="trust" className="px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl items-center gap-9 sm:gap-12 lg:grid-cols-[0.95fr_1.05fr]">
             <div className="relative">
               <div className="absolute -left-10 -top-10 h-32 w-32 rounded-3xl bg-workie-blue/10" />
               <div className="absolute -bottom-10 right-0 h-44 w-44 rounded-[40px] bg-workie-gold/20" />
@@ -477,13 +477,13 @@ const HomePage = () => {
                 title={content.processTitle}
                 body={content.processBody}
               />
-              <div className="mt-8 space-y-5">
+              <div className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
                 {content.steps.map((step, index) => (
-                  <div key={step.title} className="flex gap-5 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-workie-gold text-lg font-black text-white">{index + 1}</span>
+                  <div key={step.title} className="flex gap-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:gap-5 sm:rounded-[28px] sm:p-5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-workie-gold text-base font-black text-white sm:h-12 sm:w-12 sm:rounded-2xl sm:text-lg">{index + 1}</span>
                     <div>
-                      <h3 className="font-bold text-slate-950">{step.title}</h3>
-                      <p className="mt-1 text-sm leading-7 text-slate-600">{step.body}</p>
+                      <h3 className="text-sm font-bold text-slate-950 sm:text-base">{step.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600 sm:leading-7">{step.body}</p>
                     </div>
                   </div>
                 ))}
@@ -492,7 +492,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
+        <section className="bg-white px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <SectionIntro
               centered
@@ -500,28 +500,28 @@ const HomePage = () => {
               title="The dashboard is built around real project operations."
               body="The product supports the practical details that matter after signup: messages, files, links, assignments, payment records, review decisions, portfolio updates, and admin-guided support."
             />
-            <div className="mt-12 grid gap-6 lg:grid-cols-3">
+            <div className="mt-9 grid gap-5 sm:mt-12 sm:gap-6 lg:grid-cols-3">
               {operationalHighlights.map((item) => (
-                <article key={item.title} className="rounded-[32px] bg-[#fffaf0] p-7">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-workie-blue text-white">
-                    <item.icon className="h-7 w-7" />
+                <article key={item.title} className="rounded-[26px] bg-[#fffaf0] p-5 sm:rounded-[32px] sm:p-7">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-workie-blue text-white sm:h-14 sm:w-14">
+                    <item.icon className="h-6 w-6 sm:h-7 sm:w-7" />
                   </span>
-                  <h3 className="shell-title mt-6 text-2xl font-bold text-slate-950">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.body}</p>
+                  <h3 className="shell-title mt-5 text-xl font-bold text-slate-950 sm:mt-6 sm:text-2xl">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 sm:mt-3 sm:leading-7">{item.body}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="px-4 py-20 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl items-center gap-9 sm:gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-workie-gold">Quality and accountability</p>
-              <h2 className="shell-title mt-4 text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-workie-gold sm:text-xs sm:tracking-[0.22em]">Quality and accountability</p>
+              <h2 className="shell-title mt-3 text-[1.55rem] font-bold leading-[1.08] text-slate-950 sm:mt-4 sm:text-5xl sm:leading-tight">
                 Good work needs more than a profile match.
               </h2>
-              <p className="mt-5 text-lg leading-9 text-slate-600">
+              <p className="mt-4 text-[0.92rem] leading-6 text-slate-600 sm:mt-5 sm:text-lg sm:leading-9">
                 A client needs to know the work is being handled. A professional needs a clear expectation. The admin team needs enough structure to step in when payment, scope, files, approvals, or disputes require attention.
               </p>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -536,27 +536,27 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="bg-[#12354b] px-4 py-20 text-white sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="bg-[#12354b] px-4 py-12 text-white sm:px-6 sm:py-20 lg:px-8">
+          <div className="mx-auto grid max-w-7xl items-center gap-9 sm:gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-workie-gold">What users should feel</p>
-              <h2 className="shell-title mt-4 text-4xl font-bold leading-tight sm:text-5xl">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] text-workie-gold sm:text-xs sm:tracking-[0.22em]">What users should feel</p>
+              <h2 className="shell-title mt-3 text-[1.55rem] font-bold leading-[1.08] sm:mt-4 sm:text-5xl sm:leading-tight">
                 Less confusion. More confidence. Better delivery.
               </h2>
-              <p className="mt-5 text-lg leading-9 text-slate-200">
+              <p className="mt-4 text-[0.92rem] leading-6 text-slate-200 sm:mt-5 sm:text-lg sm:leading-9">
                 WorkieTechie is built for people who want quality work without messy back-and-forth. The platform gives both sides a shared process, visible records, and support when something needs review.
               </p>
-              <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-full bg-workie-gold px-7 py-4 text-sm font-bold !text-white">
+              <Link to="/register" className="mt-6 inline-flex items-center gap-2 rounded-full bg-workie-gold px-6 py-3.5 text-sm font-bold !text-white sm:mt-8 sm:px-7 sm:py-4">
                 Create your account <HiOutlineArrowRight className="h-5 w-5" />
               </Link>
             </div>
-            <div className="relative min-h-[580px]">
+            <div className="relative min-h-[430px] sm:min-h-[580px]">
               <div className="absolute inset-x-8 bottom-20 h-[420px] rounded-[46%] bg-white/10" />
               <div className="absolute right-0 top-12 h-32 w-32 rounded-[38px] bg-workie-gold/20" />
-              <img src={landingClientCutout} alt="Happy client after a successful project delivery" className="absolute bottom-4 left-1/2 h-[560px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_34px_44px_rgba(0,0,0,0.26)]" loading="lazy" />
-              <div className="absolute -bottom-8 left-6 right-6 rounded-[30px] border border-white/15 bg-white p-6 text-slate-800 shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
-                <p className="text-lg font-semibold leading-8">
-                  “The best part is knowing the work has a process. I can see what has been submitted, give feedback, and move to approval without chasing everyone.”
+              <img src={landingClientCutout} alt="Happy client after a successful project delivery" className="absolute bottom-16 left-1/2 h-[330px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_34px_44px_rgba(0,0,0,0.26)] sm:bottom-4 sm:h-[560px]" loading="lazy" />
+              <div className="absolute bottom-0 left-2 right-2 rounded-[24px] border border-white/15 bg-white p-5 text-slate-800 shadow-[0_24px_70px_rgba(0,0,0,0.22)] sm:-bottom-8 sm:left-6 sm:right-6 sm:rounded-[30px] sm:p-6">
+                <p className="text-sm font-semibold leading-6 sm:text-lg sm:leading-8">
+                  "The best part is knowing the work has a process. I can see what has been submitted, give feedback, and move to approval without chasing everyone."
                 </p>
                 <p className="mt-4 text-sm font-bold text-workie-blue">Typical client experience WorkieTechie is designed for</p>
               </div>
@@ -564,7 +564,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="px-4 py-24 sm:px-6 lg:px-8">
+        <section className="px-4 py-14 sm:px-6 sm:py-24 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <SectionIntro
               centered
@@ -572,24 +572,24 @@ const HomePage = () => {
               title="A few things to know before you start."
               body="WorkieTechie is intentionally structured. The point is not just to list talent, but to help the right work reach the right professional and stay accountable until completion."
             />
-            <div className="mt-12 grid gap-5 lg:grid-cols-2">
+            <div className="mt-9 grid gap-4 sm:mt-12 sm:gap-5 lg:grid-cols-2">
               {faqs.map((item) => (
-                <article key={item.question} className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-sm">
-                  <h3 className="text-lg font-bold text-slate-950">{item.question}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.answer}</p>
+                <article key={item.question} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:rounded-[30px] sm:p-7">
+                  <h3 className="text-base font-bold text-slate-950 sm:text-lg">{item.question}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 sm:mt-3 sm:leading-7">{item.answer}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="px-4 pb-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl overflow-hidden rounded-[42px] bg-gradient-to-br from-workie-gold via-[#f4bd54] to-[#ffe3a6] p-8 text-[#12354b] shadow-[0_30px_90px_rgba(223,159,39,0.22)] sm:p-12 lg:p-16">
+        <section className="px-4 pb-16 sm:px-6 sm:pb-24 lg:px-8">
+          <div className="mx-auto max-w-7xl overflow-hidden rounded-[30px] bg-gradient-to-br from-workie-gold via-[#f4bd54] to-[#ffe3a6] p-6 text-[#12354b] shadow-[0_30px_90px_rgba(223,159,39,0.22)] sm:rounded-[42px] sm:p-12 lg:p-16">
             <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em]">Ready when you are</p>
-                <h2 className="shell-title mt-4 text-4xl font-bold leading-tight sm:text-5xl">Start with a clear request or a strong professional profile.</h2>
-                <p className="mt-5 max-w-3xl text-base leading-8">
+                <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em] sm:text-xs sm:tracking-[0.22em]">Ready when you are</p>
+                <h2 className="shell-title mt-3 text-[1.7rem] font-bold leading-[1.08] sm:mt-4 sm:text-5xl sm:leading-tight">Start with a clear request or a strong professional profile.</h2>
+                <p className="mt-4 max-w-3xl text-sm leading-6 sm:mt-5 sm:text-base sm:leading-8">
                   Clients can submit a guided project request. Professionals can join the talent pool, add portfolio proof, and stay ready for assignment offers that fit their expertise.
                 </p>
               </div>

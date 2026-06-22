@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import PasswordField from '../../common/PasswordField';
 import { useAuth } from '../../hooks/useAuth';
 
 const ResetPasswordConfirm = () => {
@@ -9,7 +10,6 @@ const ResetPasswordConfirm = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const { resetPasswordConfirm, loading } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,29 +49,23 @@ const ResetPasswordConfirm = () => {
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-slate-700 text-sm font-semibold mb-2" htmlFor="newPassword">
-              New Password
-            </label>
-            <input
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none focus:border-workie-gold"
+            <PasswordField
               id="newPassword"
-              type="password"
+              label="New Password"
               placeholder="New Password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </div>
           <div className="mb-6">
-            <label className="block text-slate-700 text-sm font-semibold mb-2" htmlFor="reNewPassword">
-              Confirm New Password
-            </label>
-            <input
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700 outline-none focus:border-workie-gold"
+            <PasswordField
               id="reNewPassword"
-              type="password"
+              label="Confirm New Password"
               placeholder="Confirm New Password"
               value={reNewPassword}
               onChange={(e) => setReNewPassword(e.target.value)}
+              autoComplete="new-password"
             />
           </div>
           {error && (

@@ -21,6 +21,11 @@ const profileService = {
     return unwrapList(response.data);
   },
 
+  joinWaitlist: async (payload) => {
+    const response = await publicApi.post("/api/profile/waitlist/", payload);
+    return response.data;
+  },
+
   getBanks: async () => {
     const response = await privateApi.get("/api/profile/banks/");
     return unwrapList(response.data);

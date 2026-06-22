@@ -7,6 +7,7 @@ import logoImage from "../assets/logo2.png";
 const navLinks = [
   { label: "How it works", to: "/#how-it-works" },
   { label: "Trust process", to: "/#trust" },
+  { label: "Waitlist", to: "/waitlist" },
 ];
 
 const Navbar = ({ tone = "light" }) => {
