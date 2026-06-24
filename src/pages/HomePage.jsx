@@ -250,7 +250,7 @@ const ProcessVisual = () => (
         </div>
       ))}
     </div>
-    <div className="absolute bottom-5 left-5 z-20 rounded-[22px] bg-workie-gold px-4 py-3 text-white shadow-[0_18px_50px_rgba(223,159,39,0.32)] sm:bottom-8 sm:left-8 sm:rounded-[26px] sm:px-5 sm:py-4">
+    <div className="absolute bottom-5 left-5 z-20 hidden rounded-[22px] bg-workie-gold px-4 py-3 text-white shadow-[0_18px_50px_rgba(223,159,39,0.32)] sm:bottom-8 sm:left-8 sm:block sm:rounded-[26px] sm:px-5 sm:py-4">
       <p className="text-xs font-bold uppercase tracking-[0.18em]">Visible status</p>
       <p className="mt-1 text-lg font-black">No guessing</p>
     </div>
@@ -275,7 +275,7 @@ const QualityVisual = () => (
         </div>
       ))}
     </div>
-    <div className="absolute bottom-5 left-5 z-20 rounded-[22px] border border-white/20 bg-[#12354b]/90 px-4 py-3 text-white backdrop-blur sm:bottom-8 sm:left-8 sm:rounded-[28px] sm:px-5 sm:py-4">
+    <div className="absolute bottom-5 left-5 z-20 hidden rounded-[22px] border border-white/20 bg-[#12354b]/90 px-4 py-3 text-white backdrop-blur sm:bottom-8 sm:left-8 sm:block sm:rounded-[28px] sm:px-5 sm:py-4">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-workie-gold">Accountability</p>
       <p className="mt-1 text-lg font-black">Built into every job</p>
     </div>
@@ -312,12 +312,9 @@ const HomePage = () => {
           <div className="absolute -left-24 top-36 h-72 w-72 rounded-full bg-workie-gold/20 blur-3xl" />
           <div className="absolute right-0 top-0 h-[560px] w-[560px] rounded-bl-[240px] bg-white/30" />
 
-          <div className="relative mx-auto grid max-w-7xl items-center gap-6 lg:min-h-[760px] lg:grid-cols-[0.92fr_1.08fr] lg:gap-10">
+          <div className="relative mx-auto grid max-w-7xl items-center gap-6 lg:min-h-[650px] lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
             <div className="pt-4">
-              <p className="inline-flex rounded-full border border-workie-gold/30 bg-white/60 px-4 py-2 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-workie-blue sm:px-5 sm:text-xs sm:tracking-[0.22em]">
-                {content.eyebrow}
-              </p>
-              <div className="mt-5 inline-flex rounded-full border border-white/80 bg-white/75 p-1 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur sm:mt-6">
+              <div className="mt-1 inline-flex rounded-full border border-white/80 bg-white/75 p-1 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur sm:mt-2">
                 {Object.entries(audienceContent).map(([key, item]) => (
                   <button
                     key={key}
@@ -332,11 +329,11 @@ const HomePage = () => {
                   </button>
                 ))}
               </div>
-              <h1 className="shell-title mt-5 max-w-4xl text-[2.05rem] font-bold leading-[1.05] text-slate-950 min-[390px]:text-[2.25rem] sm:mt-7 sm:text-6xl sm:leading-[0.98] lg:text-7xl">
+              <h1 className="shell-title mt-5 max-w-3xl text-[2.05rem] font-bold leading-[1.05] text-slate-950 min-[390px]:text-[2.25rem] sm:mt-5 sm:text-5xl sm:leading-[1] lg:text-[3rem] xl:text-[3.3rem]">
                 {heroTitle}
               </h1>
-              <p className="mt-4 max-w-2xl text-[0.95rem] leading-7 text-slate-700 sm:mt-6 sm:text-lg sm:leading-9">{heroBody}</p>
-              <div className="mt-6 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:gap-4">
+              <p className="mt-4 max-w-2xl text-[0.95rem] leading-7 text-slate-700 sm:mt-5 sm:text-lg sm:leading-8">{heroBody}</p>
+              <div className="mt-6 flex flex-col gap-3 sm:mt-7 sm:flex-row sm:gap-4">
                 <Link to="/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-workie-blue px-6 py-3.5 text-sm font-bold !text-white shadow-[0_18px_40px_rgba(21,75,108,0.25)] transition hover:-translate-y-0.5 sm:px-8 sm:py-4 sm:text-base">
                   {content.primaryCta} <HiOutlineArrowRight className="h-5 w-5" />
                 </Link>
@@ -359,12 +356,12 @@ const HomePage = () => {
               </div>
             </div>
 
-            <div className="relative mx-auto min-h-[350px] w-full max-w-[440px] sm:min-h-[560px] sm:max-w-[620px] lg:min-h-[680px] lg:max-w-none">
-              <div className="absolute left-10 top-16 h-[400px] w-[400px] rounded-[42%] bg-workie-gold/25 blur-[1px] sm:h-[520px] sm:w-[520px]" />
+            <div className="relative mx-auto min-h-[350px] w-full max-w-[440px] sm:min-h-[520px] sm:max-w-[620px] lg:min-h-[600px] lg:max-w-none">
+              <div className="absolute left-10 top-16 h-[400px] w-[400px] rounded-[42%] bg-workie-gold/25 blur-[1px] sm:h-[500px] sm:w-[500px]" />
               <div className="absolute right-4 top-8 h-32 w-32 rounded-[40px] bg-white/70 shadow-[0_22px_60px_rgba(15,23,42,0.08)]" />
               <div className="absolute bottom-10 right-0 h-44 w-44 rounded-full bg-workie-blue/10" />
-              <div className="absolute left-[48%] top-8 h-[310px] w-[240px] -translate-x-1/2 rounded-[46%] bg-white/35 sm:h-[630px] sm:w-[480px]" />
-              <img src={content.heroImage} alt={content.heroAlt} className="absolute bottom-0 left-[48%] z-10 h-[330px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_34px_42px_rgba(21,75,108,0.24)] sm:h-[620px]" fetchPriority="high" />
+              <div className="absolute left-[48%] top-8 h-[310px] w-[240px] -translate-x-1/2 rounded-[46%] bg-white/35 sm:h-[570px] sm:w-[430px]" />
+              <img src={content.heroImage} alt={content.heroAlt} className="absolute bottom-0 left-[48%] z-10 h-[330px] max-w-none -translate-x-1/2 object-contain drop-shadow-[0_34px_42px_rgba(21,75,108,0.24)] sm:h-[540px] lg:h-[570px]" />
               <FloatingCard className="left-2 top-40 z-20 hidden w-[300px] sm:block" icon={HiOutlineUserGroup} title="Matched fit" body="Skills, portfolio, and scope reviewed together." />
               <FloatingCard className="bottom-24 right-0 z-20 hidden w-[330px] sm:block" icon={HiOutlineCheckBadge} title="Review-ready delivery" body="Files, links, feedback, and approvals stay visible." />
               <div className="absolute bottom-0 left-8 z-20 hidden w-[310px] rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.14)] backdrop-blur sm:block">
@@ -382,7 +379,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        <section className="relative z-20 px-4 py-10 sm:px-6 sm:py-14 lg:-mt-24 lg:px-8">
           <div className="mx-auto max-w-7xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 sm:text-sm sm:tracking-[0.22em]">Built around high-demand digital work</p>
             <div className="mt-6 flex flex-wrap justify-center gap-2 sm:mt-8 sm:gap-3">
